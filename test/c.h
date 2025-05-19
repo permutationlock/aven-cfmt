@@ -1,4 +1,4 @@
-// aven fmt columns: 100
+// aven cfmt columns: 100
 #ifndef TEST_C_H
     #define TEST_C_H
 

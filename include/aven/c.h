@@ -9972,7 +9972,7 @@
             return (AvenCConfig){ 0 };
         }
         str = aven_c_token_str(tset, i);
-        if (!aven_str_equals(str, aven_str("fmt"))) {
+        if (!aven_str_equals(str, aven_str("cfmt"))) {
             return (AvenCConfig){ 0 };
         }
         i += 1;

@@ -74,11 +74,11 @@ int main(int argc, char **argv) {
         "aven-cfmt [src_file] [options]\n"
         "configure:\n"
         "    comments at the top of files can configure options\n"
-        "        // aven fmt columns: 128\n"
-        "        // aven fmt indent: 8\n"
-        "        // aven fmt depth: 0\n"
+        "        // aven cfmt columns: 128\n"
+        "        // aven cfmt indent: 8\n"
+        "        // aven cfmt depth: 0\n"
         "    or disable formatting\n"
-        "        // aven fmt disable"
+        "        // aven cfmt disable"
     );
     AvenArgSlice args = slice_array(arg_data);
     size_t arg_cols = aven_arg_col_len(args);
