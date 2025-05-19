@@ -7647,25 +7647,34 @@
         return true;
     }
 
-    #define aven_c_ast_render_token_try(c, i, s, l) do { \
-            if (!aven_c_ast_render_token_try_internal(c, i, s, false)) { \
-                aven_c_ast_render_restore(c, l); \
+    #define aven_c_ast_render_token_try(ctx, index, split, state) do { \
+            if ( \
+                !aven_c_ast_render_token_try_internal( \
+                    ctx, \
+                    index, \
+                    split, \
+                    false \
+                ) \
+            ) { \
+                aven_c_ast_render_restore(ctx, state); \
                 return false; \
             } \
         } while (0)
-    #define aven_c_ast_render_token_force_try(c, i, s, l) do { \
-            if (!aven_c_ast_render_token_try_internal(c, i, s, true)) { \
-                aven_c_ast_render_restore(c, l); \
+    #define aven_c_ast_render_token_force_try(ctx, index, split, state) do { \
+            if ( \
+                !aven_c_ast_render_token_try_internal(ctx, index, split, true) \
+            ) { \
+                aven_c_ast_render_restore(ctx, state); \
                 return false; \
             } \
         } while (0)
-    #define aven_c_ast_render_space_try(c, s, l) do { \
-            if (s) { \
-                if (!aven_c_ast_render_flush_line(c)) { \
+    #define aven_c_ast_render_space_try(ctx, split, state) do { \
+            if (split) { \
+                if (!aven_c_ast_render_flush_line(ctx)) { \
                     return false; \
                 } \
             } else if (!aven_c_ast_render_write(ctx, aven_str(" "), true)) { \
-                aven_c_ast_render_restore(c, l); \
+                aven_c_ast_render_restore(ctx, state); \
                 return false; \
             } \
         } while (0)
