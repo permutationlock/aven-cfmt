@@ -62,6 +62,48 @@ macro practices. In the few places in my own source code where
 the formatter reported an issue, the
 changes required to comply were clear improvements.
 
+## Building
+
+Ensure that you have pulled the `libaven` submodule dependency.
+```Shell
+git submodule init
+git submodule update
+```
+To build with your favorite C compiler `cc` you may simply run
+```Shell
+cc -I deps/libaven/include -I include/ -o aven-cfmt src/aven-cfmt.c
+```
+I also have my own C build system written in C that I provide for all of my projects.
+To build the build system run either
+```Shell
+make
+```
+or
+```
+cc -o build build.c
+```
+Then to build the `aven-cfmt` binary, run
+```Shell
+./build
+```
+The resulting binary will be located in the `build_out` directory.
+Compilation flags may be specified with `--ccflags`
+```Shell
+./build --ccflags "-O3 -march=native -g0 -fstrict-aliasing"
+```
+To run the test suite, run
+```Shell
+./build test
+```
+To clean up all build artifacts, run
+```Shell
+./build clean
+```
+To see a full list of available flags, run
+```Shell
+./build help
+```
+
 ## Usage
 
 The default behavior is to read from the specified src_file and write to `stdout`.
@@ -83,6 +125,14 @@ aven-cfmt --in-place myfile.c
 The formatter will read from stdin if the `--stdin` flag is specified.
 ```Shell
 cat unformatted.c | aven-cfmt --stdin > formatted.c
+```
+
+## Fuzzing
+
+If you have `clang` installed, then I have a basic `libfuzzer` fuzzing setup that may be compiled and
+run with
+```Shell
+./clang_fuzz.sh
 ```
 
 [9]: https://github.com/andrewrk/poop
