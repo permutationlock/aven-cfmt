@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     if (winutf8_obj_step.valid) {
         winutf8_obj_step.value = libaven_build_step_windres_manifest(
             &opts,
-            root_dir,
+            libaven_dir,
             &out_dir_step,
             &arena
         );

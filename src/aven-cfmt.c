@@ -1,6 +1,7 @@
 #if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
     #define _POSIX_C_SOURCE 200112L
 #endif
+
 #define AVEN_IMPLEMENTATION
 #include <aven.h>
 #include <aven/arena.h>
