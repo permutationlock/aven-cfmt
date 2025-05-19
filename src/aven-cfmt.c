@@ -57,7 +57,7 @@ static AvenArg arg_data[] = {
 };
 
 // 1GB virtual memory reserve handles pathological files up to ~10MB, and for
-// normal source files this limit should never be exceeded
+// normal source files this should work up to ~100MB
 #define ARENA_SIZE (4096 * 250000)
 #define MAX_RENDER_SIZE ((size_t)1024 * (size_t)1024 * (size_t)100)
 

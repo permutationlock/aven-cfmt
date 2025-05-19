@@ -92,6 +92,7 @@
 "ifndef"
 "elif"
 "endif"
+"include"
 "#else"
 "#define"
 "#ifdef"
