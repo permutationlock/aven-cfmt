@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 
     AvenStr overview = aven_str("Aven C Formatter");
     AvenStr usage = aven_str(
-        "aven-fmt [src_file] [options]\n"
+        "aven-cfmt [src_file] [options]\n"
         "configure:\n"
         "    comments at the top of files can configure options\n"
         "        // aven fmt columns: 128\n"
@@ -149,6 +149,7 @@ int main(int argc, char **argv) {
                 aven_fmt_str(in_file.value),
                 aven_fmt_int((int)in_res.error)
             );
+            aven_arg_help(args, overview, usage, arg_cols);
             return 1;
         }
         in_fd.valid = true;
@@ -207,6 +208,7 @@ int main(int argc, char **argv) {
                 aven_fmt_str(out_file.value),
                 aven_fmt_int((int)out_res.error)
             );
+            aven_arg_help(args, overview, usage, arg_cols);
             return 1;
         }
         out_fd.valid = true;

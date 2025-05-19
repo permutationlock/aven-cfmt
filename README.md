@@ -1,4 +1,4 @@
-## Aven C source code formatter
+# The Aven C source code formatter
 
 This repository contains a C source code lexer, parser, and AST
 renderer in `aven/c.h`. All three are combined into a source code formating
@@ -20,7 +20,7 @@ broken to fit within 80 columns, e.g. due to a long identifier or excessive inde
 then the formatter will error and report the offending
 line in the original source file.
 
-### Limitations
+## Limitations
 
 The formatter is designed to parse code that follows the C99 and C11 standards
 with some GNU extensions. E.g. it will parse GNU attribute specifiers and inline
@@ -62,7 +62,7 @@ macro practices. In the few places in my own source code where
 the formatter reported an issue, the
 changes required to comply were clear improvements.
 
-### Usage
+## Usage
 
 The default behavior is to read from the specified src_file and write to `stdout`.
 
