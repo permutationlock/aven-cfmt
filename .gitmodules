@@ -1,0 +1,3 @@
+[submodule "deps/libaven"]
+	path = deps/libaven
+	url = https://github.com/permutationlock/libaven.git
