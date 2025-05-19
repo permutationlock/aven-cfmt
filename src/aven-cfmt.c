@@ -106,6 +106,7 @@ int main(int argc, char **argv) {
     if (aven_arg_has_arg(args, "")) {
         if (aven_arg_get_bool(args, "--stdin")) {
             aven_io_perr("error: cannot specify both --stdin and src_file\n");
+            aven_arg_help(args, overview, usage, arg_cols);
             return 1;
         }
         in_file.valid = true;
