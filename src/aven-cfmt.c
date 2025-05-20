@@ -57,10 +57,10 @@ static AvenArg arg_data[] = {
     },
 };
 
-// a 64GB virtual memory reserve will handle pathological files up to ~600MB,
-// and normal source files up to ~6GB
+// a 4GB virtual memory reserve will handle pathological files up to ~40MB,
+// and normal source files up to ~400MB
 #define MAX_ARENA_SIZE ( \
-        (size_t)min((uint64_t)64000000000, (uint64_t)SIZE_MAX) \
+        (size_t)min(((uint64_t)1UL) << 32, (uint64_t)SIZE_MAX) \
     )
 
 int main(int argc, char **argv) {
