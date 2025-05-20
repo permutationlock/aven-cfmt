@@ -57,17 +57,28 @@ static AvenArg arg_data[] = {
     },
 };
 
-// 1GB virtual memory reserve handles pathological files up to ~10MB, and for
-// normal source files this should work up to ~100MB
-#define ARENA_SIZE (4096 * 250000)
-#define MAX_RENDER_SIZE ((size_t)1024 * (size_t)1024 * (size_t)100)
+// a 64GB virtual memory reserve will handle pathological files up to ~600MB,
+// and normal source files up to ~6GB
+#define MAX_ARENA_SIZE ( \
+        (size_t)min((uint64_t)64000000000, (uint64_t)SIZE_MAX) \
+    )
 
 int main(int argc, char **argv) {
-    void *mem = malloc(ARENA_SIZE);
+    size_t arena_size = MAX_ARENA_SIZE;
+    size_t render_size = arena_size / 10;
+    void *mem = NULL;
+    while (render_size >= 4096) {
+        mem = malloc(arena_size);
+        if (mem != NULL) {
+            break;
+        }
+        arena_size /= 2;
+        render_size /= 2;
+    }
     if (mem == NULL) {
         aven_panic("malloc failed\n");
     }
-    AvenArena arena = aven_arena_init(mem, ARENA_SIZE);
+    AvenArena arena = aven_arena_init(mem, arena_size);
 
     AvenStr overview = aven_str("Aven C Formatter");
     AvenStr usage = aven_str(
@@ -176,11 +187,10 @@ int main(int argc, char **argv) {
         .len = rd_res.payload.len,
     };
 
-    // Max render size of 100MB
     ByteSlice bytes = aven_arena_create_slice(
         unsigned char,
         &arena,
-        MAX_RENDER_SIZE
+        render_size
     );
     AvenIoWriter writer = aven_io_writer_init_bytes(bytes);
     AvenCFmtResult fmt_res = aven_c_fmt(
