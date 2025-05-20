@@ -152,14 +152,14 @@ int main(int argc, char **argv) {
 
     if (in_file.valid) {
         AvenIoOpenResult in_res = aven_io_open(
-            in_file.value,
+            unwrap(in_file),
             AVEN_IO_OPEN_MODE_READ,
             arena
         );
         if (in_res.error != AVEN_IO_OPEN_ERROR_NONE) {
             aven_io_perrf(
                 "error: opening '{}' failed with code {}\n",
-                aven_fmt_str(in_file.value),
+                aven_fmt_str(unwrap(in_file)),
                 aven_fmt_int((int)in_res.error)
             );
             aven_arg_help(args, overview, usage, arg_cols);
@@ -210,14 +210,14 @@ int main(int argc, char **argv) {
     Optional(AvenIoFd) out_fd = { 0 };
     if (out_file.valid) {
         AvenIoOpenResult out_res = aven_io_open(
-            out_file.value,
+            unwrap(out_file),
             AVEN_IO_OPEN_MODE_WRITE,
             arena
         );
         if (out_res.error != AVEN_IO_OPEN_ERROR_NONE) {
             aven_io_perrf(
                 "error: opening '{}' failed with code {}\n",
-                aven_fmt_str(out_file.value),
+                aven_fmt_str(unwrap(out_file)),
                 aven_fmt_int((int)out_res.error)
             );
             aven_arg_help(args, overview, usage, arg_cols);
@@ -232,31 +232,25 @@ int main(int argc, char **argv) {
     } else {
         file_writer = aven_io_stdout;
     }
-    ByteSlice rem = slice_head(writer.buffer, writer.index);
-    for (;;) {
-        if (rem.len == 0) {
-            break;
-        }
-        AvenIoResult res = aven_io_writer_push(
-            &file_writer,
-            slice_as_bytes(rem)
+    ByteSlice written = slice_head(writer.buffer, writer.index);
+    AvenIoResult res = aven_io_writer_push(
+        &file_writer,
+        slice_as_bytes(written)
+    );
+    if (res.error != 0) {
+        aven_io_perrf(
+            "error: writing '{}' failed with code {}\n",
+            aven_fmt_str(out_file.valid ? unwrap(out_file) : aven_str("stdout")),
+            aven_fmt_int(res.error)
         );
-        if (res.error != 0) {
-            aven_io_perrf(
-                "error: writing '{}' failed with code {}\n",
-                aven_fmt_str(unwrap(out_file)),
-                aven_fmt_int(res.error)
-            );
-            return 1;
-        }
-        if (res.payload == 0) {
-            aven_io_perrf(
-                "error: writing '{}' ran out of space\n",
-                aven_fmt_str(unwrap(out_file))
-            );
-            return 1;
-        }
-        rem = (ByteSlice)slice_tail(rem, res.payload);
+        return 1;
+    }
+    if (res.payload != written.len) {
+        aven_io_perrf(
+            "error: writing '{}' ran out of space\n",
+            aven_fmt_str(out_file.valid ? unwrap(out_file) : aven_str("stdout"))
+        );
+        return 1;
     }
 
     return 0;
