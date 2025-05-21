@@ -63,9 +63,7 @@ rendered if they appear within comments or string literals.
 The tokenizer currently only considers ascii characters. Wide characters that
 appear within string literals and comments will be rendered back unmodified.
 However, in the case of string literals, each character's
-full byte-width will count towards the line length. I do not use
-any non-ascii chracters within my own source code at the moment, but I hope to
-eventually add utf8 support.
+full byte-width will count towards the line length.
 
 ## Errors
 
@@ -242,8 +240,7 @@ I compiled a release build of `astyle` from upstream source, but the `clang-form
 the Chimera Linux package manager.
 This [poop][2] benchmark was only provided to show that `aven-cfmt` turned out surprisingly fast with
 very little deliberate optimization. The `clang-format` and `astyle` projects
-have very different goals, are highly configurable, actually have unicode support, and format far more
-kinds of C code.
+have very different goals, are highly configurable, and format far more kinds of C code.
 
 [1]: https://helix-editor.com/
 [2]: https://github.com/andrewrk/poop
