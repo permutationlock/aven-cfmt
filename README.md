@@ -9,22 +9,6 @@ I am not a fan of any configuration of `clang-format`,
 is specifically tailored to my code aesthetic and supports minimal configuration;
 it's trying to be `zig fmt` or `go fmt`, not `clang-format`.
 
-## Errors
-
-The formatter will only parse and render code that it considers to be correct.
-It will report the first parse error encountered, along with the exact location of
-the error in the source file. By default lines are required to render
-within 80 columns, with a slight overflow allowance
-to simplify the rendering logic. If a line cannot be
-broken to fit within 80 columns, e.g. due to a long identifier or excessive indent depth,
-then the formatter will error and report the offending
-line in the original source file.
-
-The formatter does not perform any semantic analysis, and it's error messages will
-pale in comparison to a real C compiler. The reports are primarily for debugging cases
-where a valid C source file doesn't fit within the restrictive
-flavor of C that `aven-cfmt` can parse.
-
 ## Limitations
 
 The formatter is designed to parse code that follows the C99 or C11 standard
@@ -33,12 +17,14 @@ specifiers, but attributes must occur either before all other
 declaration specifiers, or after a declarator. It will also parse C++ `extern "C"`
 blocks to allow for "universal" header files.
 
+### Preprocessor directives
+
 Standard preprocessor directives (`#if`, `#else`, etc) and macros
 (`#define A` or `#define A(...)`) will be parsed
 and pretty printed, but some heavy restrictions are placed on their use.
 A directive/macro may only be followed by a single token, a type name, an
 initializer list, a list of declaration specifiers, or an expression statement,
-a `do` statement, or a declaration without the terminating ';'.
+a `do` statement, or a declaration without the terminating `;`.
 The `#` and `##` operators are allowed in preprocessor code.
 
 Source files must be parseable C even with all
@@ -65,15 +51,39 @@ Include directives (`#include`) will also be parsed and pretty printed. Common
 directives that will not be parsed are `#error`, `#warning`, and `#pragma`; all such
 directives are rendered unmodified from the original source.
 
-## Characters and white space
+### Character sets and white space
 
-The only whitespace characters that will be rendered are spaces and newlines. Windows
-'\r\n' line endings will be parsed, but they will be rendered back as newlines.
-Carriage return characters are illegal everywhere outside of line endings.
-Tab characters are legal everywhere whitespace is allowed, but they will only be
+The only whitespace characters that will be rendered are spaces, newlines, and tabs.
+Windows `\r\n` line endings will be parsed, but they will be rendered back as newlines.
+Carriage return characters `\r` are illegal outside of line endings. All indents
+are rendered as spaces.
+Tab characters `\t` are legal everywhere whitespace is allowed, but they will only be
 rendered if they appear within comments or string literals.
-The parser only considers ascii characters, but unicode characters that
-appear within comments will be rendered back unmodified.
+
+The tokenizer currently only considers ascii characters. Wide characters that
+appear within string literals and comments will be rendered back unmodified.
+However, in the case of string literals, each character's
+full byte-width will count towards the line length. I do not use
+any non-ascii chracters within my own source code at the moment, but I hope to
+eventually add utf8 support.
+
+## Errors
+
+The formatter will only render code that it can correctly parse.
+It will report the first parse error encountered, along with the exact location of
+the error in the source file.
+
+By default lines are required to render
+within 80 columns, with a slight overflow allowance
+to simplify the rendering logic. If a line cannot be
+broken to fit within 80 columns, e.g. due to a long identifier or excessive indent depth,
+then the formatter will error and report the offending
+line in the original source file.
+
+The formatter does not perform any semantic analysis, and it's error messages will
+pale in comparison to any real C compiler. The reports are primarily for debugging cases
+where a valid C source file doesn't fit within the restrictive
+flavor of C that `aven-cfmt` can parse.
 
 ## Building
 
@@ -86,7 +96,7 @@ To build the project with your favorite C compiler `cc`, run
 ```Shell
 $ cc -I deps/libaven/include -I include/ -o aven-cfmt src/aven-cfmt.c
 ```
-I have a C build system written in C that I provide for all of my projects.
+I also have a C build system written in C that I provide for all of my projects.
 To build the build system run either
 ```Shell
 $ make
@@ -119,7 +129,7 @@ $ ./build help
 
 ## Usage
 
-The default behavior is to read from the specified src_file and write to `stdout`.
+The default behavior is to read from the specified `src_file` and write to `stdout`.
 ```Shell
 $ aven-cfmt unformatted.c > formatted.c
 ```
@@ -202,37 +212,38 @@ rm build_out/aven-cfmt.o
 $ poop "clang-format ../raylib/src/rcore.c" "astyle --style=google --stdin=../raylib/src/rcore.c" "./build_out/aven-cfmt ../raylib/src/rcore.c --columns 128"
 Benchmark 1 (10 runs): clang-format ../raylib/src/rcore.c
   measurement          mean ± σ            min … max           outliers         delta
-  wall_time           520ms ± 2.18ms     518ms …  526ms          1 (10%)        0%
-  peak_rss           94.3MB ±  146KB    94.2MB … 94.6MB          0 ( 0%)        0%
-  cpu_cycles         1.69G  ± 3.09M     1.69G  … 1.70G           0 ( 0%)        0%
-  instructions       3.88G  ± 1.20M     3.88G  … 3.88G           0 ( 0%)        0%
-  cache_references   39.5M  ± 89.8K     39.4M  … 39.7M           0 ( 0%)        0%
-  cache_misses       12.5M  ±  133K     12.3M  … 12.7M           0 ( 0%)        0%
-  branch_misses      7.75M  ± 50.9K     7.70M  … 7.88M           1 (10%)        0%
-Benchmark 2 (152 runs): astyle --style=google --stdin=../raylib/src/rcore.c
+  wall_time           520ms ± 2.06ms     518ms …  525ms          1 (10%)        0%
+  peak_rss           94.3MB ±  108KB    94.1MB … 94.4MB          0 ( 0%)        0%
+  cpu_cycles         1.69G  ± 2.96M     1.69G  … 1.70G           0 ( 0%)        0%
+  instructions       3.88G  ±  623K     3.88G  … 3.88G           0 ( 0%)        0%
+  cache_references   39.5M  ±  154K     39.3M  … 39.8M           0 ( 0%)        0%
+  cache_misses       12.7M  ± 61.5K     12.7M  … 12.8M           0 ( 0%)        0%
+  branch_misses      7.74M  ± 17.4K     7.71M  … 7.76M           0 ( 0%)        0%
+Benchmark 2 (153 runs): astyle --style=google --stdin=../raylib/src/rcore.c
   measurement          mean ± σ            min … max           outliers         delta
-  wall_time          32.9ms ±  512us    32.2ms … 35.7ms          4 ( 3%)        ⚡- 93.7% ±  0.1%
-  peak_rss           3.54MB ±  107KB    3.31MB … 3.77MB          0 ( 0%)        ⚡- 96.3% ±  0.1%
-  cpu_cycles          106M  ±  958K      105M  …  112M           7 ( 5%)        ⚡- 93.7% ±  0.0%
-  instructions        282M  ± 54.4K      282M  …  283M           2 ( 1%)        ⚡- 92.7% ±  0.0%
-  cache_references   29.5K  ± 7.85K     19.3K  … 89.4K           8 ( 5%)        ⚡- 99.9% ±  0.0%
-  cache_misses       7.93K  ± 3.84K     5.11K  … 42.3K          15 (10%)        ⚡- 99.9% ±  0.2%
-  branch_misses       516K  ± 23.0K      502K  …  692K          12 ( 8%)        ⚡- 93.3% ±  0.2%
-Benchmark 3 (1065 runs): ./build_out/aven-cfmt ../raylib/src/rcore.c --columns 128
+  wall_time          32.8ms ±  480us    32.3ms … 37.2ms          2 ( 1%)        ⚡- 93.7% ±  0.1%
+  peak_rss           3.55MB ±  104KB    3.31MB … 3.79MB          0 ( 0%)        ⚡- 96.2% ±  0.1%
+  cpu_cycles          106M  ±  567K      105M  …  108M           3 ( 2%)        ⚡- 93.7% ±  0.0%
+  instructions        282M  ± 52.1K      282M  …  283M           1 ( 1%)        ⚡- 92.7% ±  0.0%
+  cache_references   30.5K  ± 3.10K     22.7K  … 38.5K           0 ( 0%)        ⚡- 99.9% ±  0.1%
+  cache_misses       7.69K  ± 1.36K     5.95K  … 19.9K          10 ( 7%)        ⚡- 99.9% ±  0.1%
+  branch_misses       515K  ± 14.6K      500K  …  610K          11 ( 7%)        ⚡- 93.3% ±  0.1%
+Benchmark 3 (1087 runs): ./build_out/aven-cfmt ../raylib/src/rcore.c --columns 128
   measurement          mean ± σ            min … max           outliers         delta
-  wall_time          4.67ms ±  596us    4.10ms … 7.47ms        100 ( 9%)        ⚡- 99.1% ±  0.1%
-  peak_rss           1.86MB ± 59.6KB    1.66MB … 1.97MB          3 ( 0%)        ⚡- 98.0% ±  0.0%
-  cpu_cycles         12.0M  ±  207K     11.6M  … 13.9M          23 ( 2%)        ⚡- 99.3% ±  0.0%
-  instructions       28.9M  ±  211      28.9M  … 28.9M           0 ( 0%)        ⚡- 99.3% ±  0.0%
-  cache_references   9.50K  ± 4.61K     5.20K  … 60.7K          26 ( 2%)        ⚡-100.0% ±  0.0%
-  cache_misses       1.35K  ±  621       938   … 16.4K          23 ( 2%)        ⚡-100.0% ±  0.1%
-  branch_misses       132K  ± 5.48K      121K  …  151K          34 ( 3%)        ⚡- 98.3% ±  0.1%
+  wall_time          4.57ms ±  544us    4.13ms … 7.03ms        132 (12%)        ⚡- 99.1% ±  0.1%
+  peak_rss           1.86MB ± 58.5KB    1.65MB … 1.97MB          1 ( 0%)        ⚡- 98.0% ±  0.0%
+  cpu_cycles         11.9M  ±  158K     11.7M  … 13.4M          69 ( 6%)        ⚡- 99.3% ±  0.0%
+  instructions       28.9M  ±  208      28.9M  … 28.9M           0 ( 0%)        ⚡- 99.3% ±  0.0%
+  cache_references   9.97K  ± 4.54K     5.37K  … 60.4K          20 ( 2%)        ⚡-100.0% ±  0.0%
+  cache_misses       1.39K  ±  640       946   … 17.0K          24 ( 2%)        ⚡-100.0% ±  0.0%
+  branch_misses       125K  ± 2.92K      122K  …  138K         163 (15%)        ⚡- 98.4% ±  0.0%
 ```
 I compiled a release build of `astyle` from upstream source, but the `clang-format` binary was from
 the Chimera Linux package manager.
-The [poop][2] benchmark was only provided to show that `aven-cfmt` turned out surprisingly fast with
-hardly any deliberate optimization. The `clang-format` and `astyle` projects
-have very different goals, are highly configurable, and format far more kinds of C code.
+This [poop][2] benchmark was only provided to show that `aven-cfmt` turned out surprisingly fast with
+very little deliberate optimization. The `clang-format` and `astyle` projects
+have very different goals, are highly configurable, actually have unicode support, and format far more
+kinds of C code.
 
 [1]: https://helix-editor.com/
 [2]: https://github.com/andrewrk/poop

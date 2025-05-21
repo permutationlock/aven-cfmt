@@ -44,6 +44,8 @@
 "_Thread_local"
 "__attribute"
 "__attribute__"
+"asm"
+"__asm__"
 "or"
 "and"
 "+"

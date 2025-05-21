@@ -1072,6 +1072,42 @@
                 },
             },
             {
+                .desc = aven_str("aven_c_ast_render utf8 string literal"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("char str[] = u8\"Hello, World!\";\n"),
+                    .expected = aven_str("char str[] = u8\"Hello, World!\";\n"),
+                    .line_len = 32,
+                },
+            },
+            {
+                .desc = aven_str("aven_c_ast_render u wide string literal"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("char str[] = u\"Hello, World!\";\n"),
+                    .expected = aven_str("char str[] = u\"Hello, World!\";\n"),
+                    .line_len = 32,
+                },
+            },
+            {
+                .desc = aven_str("aven_c_ast_render U wide string literal"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("char str[] = U\"Hello, World!\";\n"),
+                    .expected = aven_str("char str[] = U\"Hello, World!\";\n"),
+                    .line_len = 32,
+                },
+            },
+            {
+                .desc = aven_str("aven_c_ast_render L wide string literal"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("char str[] = L\"Hello, World!\";\n"),
+                    .expected = aven_str("char str[] = L\"Hello, World!\";\n"),
+                    .line_len = 32,
+                },
+            },
+            {
                 .desc = aven_str("aven_c_ast_render compound string literal"),
                 .fn = test_aven_c_ast_render,
                 .args = &(TestAvenCAstRenderArgs){

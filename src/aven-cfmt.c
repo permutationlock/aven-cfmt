@@ -101,14 +101,10 @@ int main(int argc, char **argv) {
         }
     }
 
-    uint64_t arg_cwidth = aven_arg_get_uint(args, "--columns");
-    uint64_t arg_indent = aven_arg_get_uint(args, "--indent");
-    uint64_t arg_depth = aven_arg_get_uint(args, "--depth");
-    size_t column_width = (size_t)arg_cwidth;
-    size_t indent = (size_t)arg_indent;
-    size_t parse_depth = (size_t)arg_depth;
+    size_t column_width = (size_t)aven_arg_get_uint(args, "--columns");
+    size_t indent = (size_t)aven_arg_get_uint(args, "--indent");
+    size_t parse_depth = (size_t)aven_arg_get_uint(args, "--depth");
 
-    AvenIoReader reader = aven_io_stdin;
     Optional(AvenIoFd) in_fd = { 0 };
     Optional(AvenStr) in_file = { 0 };
     if (aven_arg_has_arg(args, "")) {
@@ -147,6 +143,7 @@ int main(int argc, char **argv) {
         out_file.value = in_file.value;
     }
 
+    AvenIoReader reader = aven_io_stdin;
     if (in_file.valid) {
         AvenIoOpenResult in_res = aven_io_open(
             unwrap(in_file),
