@@ -52,24 +52,22 @@ static AvenArg arg_data[] = {
     {
         .name = aven_str_init("--depth"),
         .description = aven_str_init("parse depth, 0 for no limit"),
-        .value = { .type = AVEN_ARG_TYPE_UINT, .data = { .arg_uint = 12 } },
+        .value = { .type = AVEN_ARG_TYPE_UINT, .data = { .arg_uint = 32 } },
         .type = AVEN_ARG_TYPE_UINT,
     },
 };
 
-// a 4GB virtual memory reserve will handle pathological files up to ~40MB,
-// and normal source files up to ~400MB
-#define MAX_ARENA_SIZE ((size_t)min(UINT32_MAX, SIZE_MAX))
-
 int main(int argc, char **argv) {
-    size_t arena_size = MAX_ARENA_SIZE;
+    // a 4GB virtual memory reserve will handle pathological files up to ~40MB,
+    // and normal source files up to ~400MB
+    size_t arena_size = (size_t)min((1ULL << 32), SIZE_MAX);
     void *mem = NULL;
-    while (render_size >= (1 << 14)) {
+    while (arena_size >= (1ULL << 14)) {
         mem = malloc(arena_size);
         if (mem != NULL) {
             break;
         }
-        arena_size /= 2;
+        arena_size >>= 1;
     }
     if (mem == NULL) {
         aven_panic("malloc failed\n");
@@ -140,7 +138,7 @@ int main(int argc, char **argv) {
     }
     if (in_place) {
         if (!in_file.valid) {
-            aven_io_perr("error: must specify a src_file to use --in-place\n");
+            aven_io_perr("error: specify a src_file to use --in-place\n");
             aven_arg_help(args, overview, usage, arg_cols);
             return 1;
         }
@@ -176,7 +174,8 @@ int main(int argc, char **argv) {
     );
     if (rd_res.error != 0) {
         aven_io_perrf(
-            "error: reader failed with code {}\n",
+            "error: reading '{}' failed with code {}\n",
+            aven_fmt_str(in_file.valid ? unwrap(in_file) : aven_str("stdin")),
             aven_fmt_int(rd_res.error)
         );
         return 1;
@@ -242,7 +241,7 @@ int main(int argc, char **argv) {
     }
     if (res.payload != written.len) {
         aven_io_perrf(
-            "error: writing '{}' ran out of space\n",
+            "error: ran out of space writing to '{}'\n",
             aven_fmt_str(out_file.valid ? unwrap(out_file) : aven_str("stdout"))
         );
         return 1;
