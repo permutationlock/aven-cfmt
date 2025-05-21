@@ -2837,6 +2837,7 @@
 
     static AvenCTokenSet aven_c_lex(AvenStr bytes, AvenArena *arena) {
         assert(get(bytes, bytes.len - 1) == 0);
+        assert(bytes.len <= UINT32_MAX);
         AvenCLexCtx ctx = {
             .bytes = bytes,
             .tokens = aven_arena_create_list(

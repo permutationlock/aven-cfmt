@@ -59,26 +59,23 @@ static AvenArg arg_data[] = {
 
 // a 4GB virtual memory reserve will handle pathological files up to ~40MB,
 // and normal source files up to ~400MB
-#define MAX_ARENA_SIZE ( \
-        (size_t)min(((uint64_t)1UL) << 32, (uint64_t)SIZE_MAX) \
-    )
+#define MAX_ARENA_SIZE ((size_t)min(UINT32_MAX, SIZE_MAX))
 
 int main(int argc, char **argv) {
     size_t arena_size = MAX_ARENA_SIZE;
-    size_t render_size = arena_size / 10;
     void *mem = NULL;
-    while (render_size >= 4096) {
+    while (render_size >= (1 << 14)) {
         mem = malloc(arena_size);
         if (mem != NULL) {
             break;
         }
         arena_size /= 2;
-        render_size /= 2;
     }
     if (mem == NULL) {
         aven_panic("malloc failed\n");
     }
     AvenArena arena = aven_arena_init(mem, arena_size);
+    size_t render_size = arena_size / 10;
 
     AvenStr overview = aven_str("Aven C Formatter");
     AvenStr usage = aven_str(
@@ -105,12 +102,14 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
+
     uint64_t arg_cwidth = aven_arg_get_uint(args, "--columns");
     uint64_t arg_indent = aven_arg_get_uint(args, "--indent");
     uint64_t arg_depth = aven_arg_get_uint(args, "--depth");
     size_t column_width = (size_t)arg_cwidth;
     size_t indent = (size_t)arg_indent;
     size_t parse_depth = (size_t)arg_depth;
+
     AvenIoReader reader = aven_io_stdin;
     Optional(AvenIoFd) in_fd = { 0 };
     Optional(AvenStr) in_file = { 0 };
@@ -201,11 +200,11 @@ int main(int argc, char **argv) {
         parse_depth,
         &arena
     );
-    aven_io_writer_flush(&writer);
     if (fmt_res.error != AVEN_C_FMT_ERROR_NONE) {
         aven_io_perrf("error: {}\n", aven_fmt_str(fmt_res.msg));
         return 1;
     }
+    ByteSlice written = slice_head(writer.buffer, writer.index);
 
     Optional(AvenIoFd) out_fd = { 0 };
     if (out_file.valid) {
@@ -232,11 +231,7 @@ int main(int argc, char **argv) {
     } else {
         file_writer = aven_io_stdout;
     }
-    ByteSlice written = slice_head(writer.buffer, writer.index);
-    AvenIoResult res = aven_io_writer_push(
-        &file_writer,
-        slice_as_bytes(written)
-    );
+    AvenIoResult res = aven_io_writer_push(&file_writer, written);
     if (res.error != 0) {
         aven_io_perrf(
             "error: writing '{}' failed with code {}\n",
