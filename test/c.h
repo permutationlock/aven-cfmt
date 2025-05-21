@@ -2483,6 +2483,22 @@
                     .line_len = 32,
                 },
             },
+            {
+                .desc = aven_str("aven_c_ast_render ppd with whitespace between # and include"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("extern \"C\" { int printf(const char *fmt, ...); }\n"),
+                    .expected = aven_str(
+                        "extern \"C\" {\n"
+                        "    int printf(\n"
+                        "        const char *fmt,\n"
+                        "        ...\n"
+                        "    );\n"
+                        "}\n"
+                    ),
+                    .line_len = 32,
+                },
+            },
         };
 
         AvenTestCaseSlice tcases = slice_array(tcase_data);

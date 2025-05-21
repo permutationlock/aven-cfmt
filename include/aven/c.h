@@ -21,7 +21,6 @@
         AVEN_C_KEYWORD_INT,
         AVEN_C_KEYWORD_3END,
         AVEN_C_KEYWORD_AUTO,
-        AVEN_C_KEYWORD_C11BOOL,
         AVEN_C_KEYWORD_CASE,
         AVEN_C_KEYWORD_CHAR,
         AVEN_C_KEYWORD_ELSE,
@@ -107,7 +106,6 @@
         [AVEN_C_KEYWORD_FOR] = aven_str_init("for"),
         [AVEN_C_KEYWORD_INT] = aven_str_init("int"),
         [AVEN_C_KEYWORD_AUTO] = aven_str_init("auto"),
-        [AVEN_C_KEYWORD_C11BOOL] = aven_str_init("bool"),
         [AVEN_C_KEYWORD_CASE] = aven_str_init("case"),
         [AVEN_C_KEYWORD_CHAR] = aven_str_init("char"),
         [AVEN_C_KEYWORD_ELSE] = aven_str_init("else"),
@@ -2979,6 +2977,7 @@
         AVEN_C_AST_NODE_TYPE_RETURN_STATEMENT,
         AVEN_C_AST_NODE_TYPE_ASM_STATEMENT,
         AVEN_C_AST_NODE_TYPE_FUNCTION_DEFINITION,
+        AVEN_C_AST_NODE_TYPE_CPP_EXTERN_UNIT,
         AVEN_C_AST_NODE_TYPE_TRANSLATION_UNIT,
         AVEN_C_AST_NODE_TYPE_TERMINATED_LINE,
         AVEN_C_AST_NODE_TYPE_MACRO_INVOCATION,
@@ -3432,6 +3431,7 @@
     static uint32_t aven_c_ast_parse_declarator(AvenCAstCtx *ctx);
     static uint32_t aven_c_ast_parse_parameter_type_list(AvenCAstCtx *ctx);
     static uint32_t aven_c_ast_parse_abstract_declarator(AvenCAstCtx *ctx);
+    static uint32_t aven_c_ast_parse_translation_unit(AvenCAstCtx *ctx);
 
     static uint32_t aven_c_ast_parse_macro_argument(AvenCAstCtx *ctx) {
         AvenCAstCtxState state = aven_c_ast_save(ctx);
@@ -3867,7 +3867,6 @@
         uint32_t main_token = aven_c_ast_next_index(ctx);
         AvenCKeyword keyword = (AvenCKeyword)next.end;
         switch (keyword) {
-            case AVEN_C_KEYWORD_C11BOOL:
             case AVEN_C_KEYWORD_BOOL:
             case AVEN_C_KEYWORD_CHAR:
             case AVEN_C_KEYWORD_DOUBLE:
@@ -6847,6 +6846,42 @@
         );
     }
 
+    static uint32_t aven_c_ast_parse_cpp_extern_unit(AvenCAstCtx *ctx) {
+        AvenCAstCtxState state = aven_c_ast_save(ctx);
+        uint32_t main_token = aven_c_ast_next_index(ctx);
+        if (!aven_c_ast_match_keyword(ctx, AVEN_C_KEYWORD_EXTERN)) {
+            return 0;
+        }
+        uint32_t lhs = aven_c_ast_parse_string_literal(ctx);
+        if (lhs == 0) {
+            aven_c_ast_restore_trap(ctx, state);
+            return 0;
+        }
+        uint32_t open_token = aven_c_ast_next_index(ctx);
+        if (!aven_c_ast_match_punctuator(ctx, AVEN_C_PNC_CRBL)) {
+            aven_c_ast_restore_trap(ctx, state);
+            return 0;
+        }
+        aven_c_ast_descend(ctx);
+        uint32_t rhs = aven_c_ast_parse_translation_unit(ctx);
+        uint32_t close_token = aven_c_ast_next_index(ctx);
+        if (!aven_c_ast_match_punctuator(ctx, AVEN_C_PNC_CRBR)) {
+            aven_c_ast_error(ctx, state);
+            return 0;
+        }
+        uint32_t scratch_top = aven_c_ast_scratch_init(ctx);
+        list_push(ctx->scratch) = main_token;
+        list_push(ctx->scratch) = open_token;
+        list_push(ctx->scratch) = close_token;
+        return aven_c_ast_push(
+            ctx,
+            AVEN_C_AST_NODE_TYPE_CPP_EXTERN_UNIT,
+            aven_c_ast_scratch_commit(ctx, scratch_top),
+            lhs,
+            rhs
+        );
+    }
+
     static uint32_t aven_c_ast_parse_translation_unit(AvenCAstCtx *ctx) {
         uint32_t main_token = aven_c_ast_next_index(ctx);
         uint32_t scratch_top = aven_c_ast_scratch_init(ctx);
@@ -6854,6 +6889,9 @@
             uint32_t extern_decl = aven_c_ast_parse_function_definition(ctx);
             if (extern_decl == 0) {
                 extern_decl = aven_c_ast_parse_declaration(ctx);
+            }
+            if (extern_decl == 0) {
+                extern_decl = aven_c_ast_parse_cpp_extern_unit(ctx);
             }
             if (extern_decl == 0) {
                 break;
@@ -9831,6 +9869,48 @@
                     split,
                     state
                 );
+                break;
+            }
+            case AVEN_C_AST_NODE_TYPE_CPP_EXTERN_UNIT: {
+                if (!split) {
+                    aven_c_ast_render_restore(ctx, state);
+                    return false;
+                }
+                if (!aven_c_ast_render_flush_line(ctx)) {
+                    return false;
+                }
+                AvenCAstDataSlice tokens = aven_c_ast_data_get(
+                    ctx->ast,
+                    node.token
+                );
+                aven_c_ast_render_token_try(ctx, get(tokens, 0), split, state);
+                aven_c_ast_render_space_try(ctx, false, state);
+                aven_c_ast_render_node_try(
+                    ctx,
+                    node.type,
+                    node.lhs,
+                    false,
+                    split,
+                    state
+                );
+                aven_c_ast_render_space_try(ctx, false, state);
+                aven_c_ast_render_token_force_try(
+                    ctx,
+                    get(tokens, 1),
+                    split,
+                    state
+                );
+                ctx->indent += 1;
+                aven_c_ast_render_node_try(
+                    ctx,
+                    node.type,
+                    node.rhs,
+                    false,
+                    split,
+                    state
+                );
+                ctx->indent -= 1;
+                aven_c_ast_render_token_try(ctx, get(tokens, 2), split, state);
                 break;
             }
             case AVEN_C_AST_NODE_TYPE_TERMINATED_LINE: {
