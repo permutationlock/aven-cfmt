@@ -44,26 +44,28 @@ If the column width is set to unlimited (`--columns 0`), then `aven-cfmt`
 will format most Raylib and GLFW source files. The files it refuses to format
 use either unsupported macros or non-standard extensions like the MSVC
 `(__stdcall *fn)` declarators. It would be simple to modify these files
-to comply, but, of course, formatting established projects is not the goal of
-`aven-cfmt`.
+to comply, but, of course, formatting code from established projects is not a
+goal of `aven-cfmt`.
 
-Include directives (`#include`) will also be parsed and pretty printed. Common
-directives that will not be parsed are `#error`, `#warning`, and `#pragma`; all such
+Include directives (`#include`) will also be parsed and pretty printed. All other
+directives will not be parsed, including `#error`, `#warning`, and `#pragma`; all such
 directives are rendered unmodified from the original source.
 
 ### Character sets and white space
 
-The only whitespace characters that will be rendered are spaces, newlines, and tabs.
-Windows `\r\n` line endings will be parsed, but they will be rendered back as newlines.
-Carriage return characters `\r` are illegal outside of line endings. All indents
-are rendered as spaces.
-Tab characters `\t` are legal everywhere whitespace is allowed, but they will only be
-rendered if they appear within comments or string literals.
+Source files are assumed to be ascii or utf8 encoded. The source file is
+verified to be valid utf8 prior to tokenization.
+The tokenizer only allows non-ascii codepoints in comments, character
+constants, and string literals. With regards to column width, each utf8 codepoint
+is counted as one column.
 
-The tokenizer currently only considers ascii characters. Wide characters that
-appear within string literals and comments will be rendered back unmodified.
-However, in the case of string literals, each character's
-full byte-width will count towards the line length.
+The only whitespace characters that will be rendered are spaces, newlines, and tabs.
+Windows `\r\n` line endings will be parsed the same as `\n`, and the formatter
+will render all line endings as `\n`.
+Carriage return characters `\r` are illegal outside of line endings. All indents
+are rendered with spaces.
+Tab characters `\t` are legal everywhere whitespace is allowed, but will only be
+rendered if they appear within comments or string literals.
 
 ## Errors
 
@@ -195,6 +197,15 @@ $ ./clang_fuzz.sh
 The fuzzer runs indefinitely, halting upon encountering a crash, failed assert, sanitizer trap, or
 an input that takes longer than 1 second to parse and render.
 
+## Parse depth
+
+The `aven-cfmt` C parser is not particularly well designed, and a combinatorial explosion of backtracking can
+occur with some pathological inputs. The hack to solve this (and satisfy the fuzzer) was to put a limit on the
+depth of the parse tree. If valid source code contains extremely long expressions or
+if-else chains, then this depth limit may become a problem. The `--depth N` command line
+argument or the `// aven cfmt depth: N` control comment may be used to change the parse depth limit
+in such cases.
+
 ## Performance
 
 My benchmarks show that `aven-cfmt` formats at ~30-40MB/sec on my Intel N100 mini pc.
@@ -238,9 +249,8 @@ Benchmark 3 (1087 runs): ./build_out/aven-cfmt ../raylib/src/rcore.c --columns 1
 ```
 I compiled a release build of `astyle` from upstream source, but the `clang-format` binary was from
 my package manager.
-This [poop][2] benchmark was only provided to show that `aven-cfmt` turned out surprisingly fast with
-very little deliberate optimization. The `clang-format` and `astyle` projects
-have very different goals, are highly configurable, and format far more kinds of code.
+This [poop][2] benchmark was only provided to show that, due to its simplicity, `aven-cfmt`
+seems to run very fast, even though I did very little deliberate optimization.
 
 [1]: https://helix-editor.com/
 [2]: https://github.com/andrewrk/poop

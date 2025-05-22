@@ -51,8 +51,8 @@ static AvenArg arg_data[] = {
     },
     {
         .name = aven_str_init("--depth"),
-        .description = aven_str_init("parse depth, 0 for no limit"),
-        .value = { .type = AVEN_ARG_TYPE_UINT, .data = { .arg_uint = 32 } },
+        .description = aven_str_init("parse tree depth, 0 for no limit"),
+        .value = { .type = AVEN_ARG_TYPE_UINT, .data = { .arg_uint = 40 } },
         .type = AVEN_ARG_TYPE_UINT,
     },
 };

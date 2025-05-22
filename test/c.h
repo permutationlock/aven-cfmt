@@ -138,7 +138,7 @@
     typedef struct {
         AvenStr src;
         AvenStr expected;
-        size_t line_len;
+        uint32_t line_len;
     } TestAvenCAstRenderArgs;
 
     static AvenTestResult test_aven_c_ast_render(AvenArena *emsg_arena, AvenArena arena, void *args) {
@@ -226,7 +226,7 @@
                             { .val = aven_str("#"), .type = AVEN_C_TOKEN_TYPE_PNC },
                             { .val = aven_str("include"), .type = AVEN_C_TOKEN_TYPE_ID },
                             { .val = aven_str("<"), .type = AVEN_C_TOKEN_TYPE_PNC },
-                            { .val = aven_str("stdio.h"), .type = AVEN_C_TOKEN_TYPE_ID },
+                            { .val = aven_str("stdio.h"), .type = AVEN_C_TOKEN_TYPE_STR },
                             { .val = aven_str(">"), .type = AVEN_C_TOKEN_TYPE_PNC },
                         }
                     ),
@@ -1063,21 +1063,41 @@
                 },
             },
             {
+                .desc = aven_str("aven_c_ast_render char constant"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("char c = \'c\';\n"),
+                    .expected = aven_str("char c = \'c\';\n"),
+                    .line_len = 17,
+                },
+            },
+            {
+                .desc = aven_str("aven_c_ast_render char32_t constant"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    // assumes utf8 extended source character set
+                    .src = slice_array("char32_t c = U\'💩\';\n"),
+                    .expected = aven_str("char32_t c = U\'💩\';\n"),
+                    .line_len = 18,
+                },
+            },
+            {
                 .desc = aven_str("aven_c_ast_render string literal"),
                 .fn = test_aven_c_ast_render,
                 .args = &(TestAvenCAstRenderArgs){
                     .src = slice_array("char str[] = \"Hello, World!\";\n"),
                     .expected = aven_str("char str[] = \"Hello, World!\";\n"),
-                    .line_len = 32,
+                    .line_len = 29,
                 },
             },
             {
                 .desc = aven_str("aven_c_ast_render utf8 string literal"),
                 .fn = test_aven_c_ast_render,
                 .args = &(TestAvenCAstRenderArgs){
-                    .src = slice_array("char str[] = u8\"Hello, World!\";\n"),
-                    .expected = aven_str("char str[] = u8\"Hello, World!\";\n"),
-                    .line_len = 32,
+                    // assumes utf8 extended source character set
+                    .src = slice_array("char str[] = u8\"Héllo, World!\";\n"),
+                    .expected = aven_str("char str[] = u8\"Héllo, World!\";\n"),
+                    .line_len = 30,
                 },
             },
             {
@@ -2517,6 +2537,16 @@
                     .src = slice_array("#   include  <  path / to /   header .   h>\n"),
                     .expected = aven_str("#include <path/to/header.h>\n"),
                     .line_len = 32,
+                },
+            },
+            {
+                .desc = aven_str("aven_c_ast_render ppd header with utf8"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    // assumes utf8 extended source character set
+                    .src = slice_array("#include <é.h>\n"),
+                    .expected = aven_str("#include <é.h>\n"),
+                    .line_len = 16,
                 },
             },
             {

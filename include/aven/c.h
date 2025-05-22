@@ -449,15 +449,11 @@
         uint32_t col;
     } AvenCTokenLoc;
 
-    static AvenCTokenLoc aven_c_token_loc(AvenCTokenSet tset, uint32_t index) {
-        AvenCToken token = get(tset.tokens, index);
-        uint32_t src_index = (token.type == AVEN_C_TOKEN_TYPE_PPD) ?
-            get(tset.tokens, token.index).index :
-            token.index;
+    static AvenCTokenLoc aven_c_byte_loc(AvenStr src, uint32_t src_index) {
         uint32_t line = 1;
         uint32_t col = 1;
         for (uint32_t i = 0; i < src_index; i += 1) {
-            if (get(tset.bytes, i) == '\n') {
+            if (get(src, i) == '\n') {
                 line += 1;
                 col = 1;
             } else {
@@ -465,6 +461,14 @@
             }
         }
         return (AvenCTokenLoc){ .line = line, .col = col };
+    }
+
+    static AvenCTokenLoc aven_c_token_loc(AvenCTokenSet tset, uint32_t index) {
+        AvenCToken token = get(tset.tokens, index);
+        uint32_t src_index = (token.type == AVEN_C_TOKEN_TYPE_PPD) ?
+            get(tset.tokens, token.index).index :
+            token.index;
+        return aven_c_byte_loc(tset.bytes, src_index);
     }
 
     typedef enum {
@@ -679,7 +683,7 @@
                     case '\t': {
                         if (ctx->index > ctx->token_start) {
                             list_push(ctx->tokens) = (AvenCToken){
-                                .type = AVEN_C_TOKEN_TYPE_ID,
+                                .type = AVEN_C_TOKEN_TYPE_STR,
                                 .index = ctx->token_start,
                                 .end = ctx->index,
                             };
@@ -706,7 +710,7 @@
                     case '>': {
                         if (ctx->index > ctx->token_start) {
                             list_push(ctx->tokens) = (AvenCToken){
-                                .type = AVEN_C_TOKEN_TYPE_ID,
+                                .type = AVEN_C_TOKEN_TYPE_STR,
                                 .index = ctx->token_start,
                                 .end = ctx->index,
                             };
@@ -732,7 +736,7 @@
                 switch (c) {
                     case '/':
                     case '*': {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_DONE;
+                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_INV;
                         break;
                     }
                     default: {
@@ -748,7 +752,7 @@
                     case '\t': {
                         if (ctx->index > ctx->token_start) {
                             list_push(ctx->tokens) = (AvenCToken){
-                                .type = AVEN_C_TOKEN_TYPE_ID,
+                                .type = AVEN_C_TOKEN_TYPE_STR,
                                 .index = ctx->token_start,
                                 .end = ctx->index,
                             };
@@ -775,7 +779,7 @@
                     case '\"': {
                         if (ctx->index > ctx->token_start) {
                             list_push(ctx->tokens) = (AvenCToken){
-                                .type = AVEN_C_TOKEN_TYPE_ID,
+                                .type = AVEN_C_TOKEN_TYPE_STR,
                                 .index = ctx->token_start,
                                 .end = ctx->index,
                             };
@@ -801,7 +805,7 @@
                 switch (c) {
                     case '/':
                     case '*': {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_DONE;
+                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_INV;
                         break;
                     }
                     default: {
@@ -1126,6 +1130,11 @@
                         ctx->state = AVEN_C_LEX_STATE_STR;
                         break;
                     }
+                    case '\'': {
+                        ctx->index += 1;
+                        ctx->state = AVEN_C_LEX_STATE_CHAR;
+                        break;
+                    }
                     case '8': {
                         ctx->index += 1;
                         ctx->state = AVEN_C_LEX_STATE_PREFIX_LCU8;
@@ -1157,6 +1166,11 @@
                     case '\"': {
                         ctx->index += 1;
                         ctx->state = AVEN_C_LEX_STATE_STR;
+                        break;
+                    }
+                    case '\'': {
+                        ctx->index += 1;
+                        ctx->state = AVEN_C_LEX_STATE_CHAR;
                         break;
                     }
                     default: {
@@ -7243,7 +7257,7 @@
                 ) {
                     ctx->error = (AvenCAstError){
                         .token = aven_c_ast_next_index(ctx),
-                        .type = AVEN_C_TOKEN_TYPE_ID,
+                        .type = AVEN_C_TOKEN_TYPE_STR,
                     };
                     aven_c_ast_error(ctx, state);
                     return 0;
@@ -7267,7 +7281,7 @@
                 ) {
                     ctx->error = (AvenCAstError){
                         .token = aven_c_ast_next_index(ctx),
-                        .type = AVEN_C_TOKEN_TYPE_ID,
+                        .type = AVEN_C_TOKEN_TYPE_STR,
                     };
                     aven_c_ast_error(ctx, state);
                     return 0;
@@ -7405,13 +7419,15 @@
                 token_index - back_offset :
                 0;
             for (size_t i = start; i < (size_t)token_index; i += 1) {
-                if (get(ctx.tset.bytes, i) == '\n') {
+                char c = get(ctx.tset.bytes, i);
+                if (c == '\n' or c == '\t' or c == '\r') {
                     start = i + 1;
                 }
             }
             size_t end = min(start + 100, ctx.tset.bytes.len);
             for (uint32_t i = token_index; i < end; i += 1) {
-                if (get(ctx.tset.bytes, i) == '\n') {
+                char c = get(ctx.tset.bytes, i);
+                if (c == '\n' or c == '\t' or c == '\r') {
                     end = i;
                     break;
                 }
@@ -7520,11 +7536,12 @@
         AvenStr line;
         AvenStr newline_str;
         AvenStr indent_str;
-        size_t line_len;
+        uint32_t line_len;
         int io_error;
         uint32_t pp_cursor;
         uint32_t lines_written;
         uint32_t cursor;
+        uint32_t width;
         uint32_t indent;
         uint32_t pp_indent;
         uint32_t trailing_lines;
@@ -7534,6 +7551,7 @@
 
     typedef struct {
         uint32_t cursor;
+        uint32_t width;
         uint32_t indent;
         uint32_t pp_cursor;
         uint32_t last_token;
@@ -7543,6 +7561,7 @@
     static AvenCAstRenderCtxState aven_c_ast_render_save(AvenCAstRenderCtx *ctx) {
         return (AvenCAstRenderCtxState){
             .cursor = ctx->cursor,
+            .width = ctx->width,
             .indent = ctx->indent,
             .last_token = ctx->last_token,
             .ppd = ctx->ppd,
@@ -7554,6 +7573,7 @@
         AvenCAstRenderCtxState state
     ) {
         ctx->cursor = state.cursor;
+        ctx->width = state.width;
         ctx->indent = state.indent;
         ctx->last_token = state.last_token;
         ctx->ppd = state.ppd;
@@ -7567,17 +7587,21 @@
         if (str.len == 0) {
             return true;
         }
-        size_t cap = ctx->line_len;
+        uint32_t len_cap = ctx->width < ctx->line_len ?
+            ctx->line_len - ctx->width :
+            0;
         if (force_fit) {
-            cap = ctx->line.len - ctx->newline_str.len;
+            len_cap = (uint32_t)(
+                ctx->line.len - ctx->newline_str.len - ctx->cursor
+            );
         }
         if (ctx->ppd) {
-            cap -= 2;
+            len_cap = len_cap > 2 ? len_cap - 2 : 0;
         }
         AvenStr rem = aven_str_range(
             ctx->line,
             ctx->cursor,
-            max(cap, ctx->cursor)
+            ctx->cursor + len_cap
         );
         if (ctx->cursor == 0) {
             for (uint32_t i = 0; i < ctx->indent + ctx->pp_indent; i += 1) {
@@ -7586,6 +7610,7 @@
                 }
                 slice_copy(rem, ctx->indent_str);
                 ctx->cursor += (uint32_t)ctx->indent_str.len;
+                ctx->width += (uint32_t)ctx->indent_str.len;
                 rem = aven_str_tail(rem, ctx->indent_str.len);
             }
         }
@@ -7594,6 +7619,47 @@
         }
         slice_copy(rem, str);
         ctx->cursor += (uint32_t)str.len;
+        ctx->width += (uint32_t)str.len;
+        return true;
+    }
+
+    static bool aven_c_ast_render_write_codepoints(
+        AvenCAstRenderCtx *ctx,
+        AvenStr str
+    ) {
+        if (str.len == 0) {
+            return true;
+        }
+        uint32_t len_cap = ctx->line_len > ctx->width ?
+            ctx->line_len - ctx->width :
+            0;
+        if (ctx->ppd) {
+            len_cap = len_cap > 2 ? len_cap - 2 : 0;
+        }
+        AvenStr rem = aven_str_range(
+            ctx->line,
+            ctx->cursor,
+            ctx->cursor + len_cap
+        );
+        if (ctx->cursor == 0) {
+            for (uint32_t i = 0; i < ctx->indent + ctx->pp_indent; i += 1) {
+                if (rem.len < ctx->indent_str.len) {
+                    return false;
+                }
+                slice_copy(rem, ctx->indent_str);
+                ctx->cursor += (uint32_t)ctx->indent_str.len;
+                ctx->width += (uint32_t)ctx->indent_str.len;
+                rem = aven_str_tail(rem, ctx->indent_str.len);
+            }
+        }
+        AvenStrCodepointsResult cpt_res = aven_str_codepoints(str);
+        assert(cpt_res.error == 0);
+        if (rem.len < cpt_res.payload) {
+            return false;
+        }
+        slice_copy(aven_str_tail(ctx->line, ctx->cursor), str);
+        ctx->cursor += (uint32_t)str.len;
+        ctx->width += cpt_res.payload;
         return true;
     }
 
@@ -7689,6 +7755,7 @@
         }
         ctx->lines_written += 1;
         ctx->cursor = 0;
+        ctx->width = 0;
         return true;
     }
 
@@ -7745,9 +7812,17 @@
         if (!aven_c_ast_render_pp_nodes(ctx, token, split)) {
             return false;
         }
+        AvenCTokenType type = get(ctx->ast->tset.tokens, token).type;
         AvenStr token_str = aven_c_token_str(ctx->ast->tset, token);
-        if (!aven_c_ast_render_write(ctx, token_str, force)) {
-            return false;
+        if (type == AVEN_C_TOKEN_TYPE_STR or type == AVEN_C_TOKEN_TYPE_CHR) {
+            assert(force == false);
+            if (!aven_c_ast_render_write_codepoints(ctx, token_str)) {
+                return false;
+            }
+        } else {
+            if (!aven_c_ast_render_write(ctx, token_str, force)) {
+                return false;
+            }
         }
         if (!ctx->ppd) {
             ctx->trailing_lines = get(ctx->ast->tset.tokens, token)
@@ -10051,7 +10126,7 @@
     static AvenCAstRenderResult aven_c_ast_render(
         AvenCAst *ast,
         AvenIoWriter *writer,
-        size_t line_len,
+        uint32_t line_len,
         AvenStr newline_str,
         AvenStr indent_str,
         AvenArena *arena
@@ -10064,7 +10139,7 @@
             .line = aven_arena_create_slice(
                 char,
                 &temp_arena,
-                line_len + newline_str.len + 8
+                4 * line_len + newline_str.len + 8
             ),
             .line_len = line_len,
             .newline_str = newline_str,
@@ -10271,6 +10346,22 @@
                 .msg = aven_str("source string missing null terminator"),
             };
         }
+        AvenStrCodepointsResult cpt_res = aven_str_codepoints(src);
+        if (cpt_res.error != 0) {
+            AvenCTokenLoc inv_loc = aven_c_byte_loc(
+                src,
+                (uint32_t)cpt_res.payload
+            );
+            return (AvenCFmtResult){
+                .error = AVEN_C_FMT_ERROR_PARSE,
+                .msg = aven_fmt(
+                    arena,
+                    "invalid utf8 in source at {}:{}",
+                    aven_fmt_uint(inv_loc.line),
+                    aven_fmt_uint(inv_loc.col)
+                ),
+            };
+        }
         AvenArena temp_arena = *arena;
         AvenCTokenSet tset = aven_c_lex(src, &temp_arena);
         for (uint32_t i = 1; i < tset.tokens.len; i += 1) {
@@ -10321,18 +10412,6 @@
         if (column_width <= 0 or column_width > AVEN_C_MAX_COLUMN_WIDTH) {
             column_width = AVEN_C_MAX_COLUMN_WIDTH;
         }
-        size_t min_column_width = 24;
-        if (column_width < min_column_width) {
-            return (AvenCFmtResult){
-                .error = AVEN_C_FMT_ERROR_RENDER,
-                .msg = aven_fmt(
-                    arena,
-                    "column width {} is less than the minimum of {}",
-                    aven_fmt_uint(column_width),
-                    aven_fmt_uint(min_column_width)
-                ),
-            };
-        }
         AvenStr indent_str = aven_arena_create_slice(char, &temp_arena, indent);
         for (size_t i = 0; i < indent_str.len; i += 1) {
             get(indent_str, i) = ' ';
@@ -10342,7 +10421,7 @@
         AvenCAstRenderResult ren_res = aven_c_ast_render(
             &ast,
             writer,
-            column_width,
+            (uint32_t)column_width,
             newline,
             indent_str,
             &temp_arena
