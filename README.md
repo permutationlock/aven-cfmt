@@ -67,6 +67,15 @@ are rendered with spaces.
 Tab characters `\t` are legal everywhere whitespace is allowed, but will only be
 rendered if they appear within comments or string literals.
 
+### Parse depth
+
+The `aven-cfmt` C parser is not particularly well designed, and a combinatorial explosion of backtracking can
+occur with some pathological inputs. My hack to solve this (and satisfy the fuzzer) was to put a limit on the
+depth of the parse tree. If valid source code contains extremely long expressions and/or
+if-else chains, then this depth limit may become a problem. The `--depth N` command line
+argument or the `// aven cfmt depth: N` control comment may be used to change the parse depth limit
+in such cases.
+
 ## Errors
 
 The formatter will only render code that it can correctly parse.
@@ -196,15 +205,6 @@ $ ./clang_fuzz.sh
 ```
 The fuzzer runs indefinitely, halting upon encountering a crash, failed assert, sanitizer trap, or
 an input that takes longer than 1 second to parse and render.
-
-## Parse depth
-
-The `aven-cfmt` C parser is not particularly well designed, and a combinatorial explosion of backtracking can
-occur with some pathological inputs. The hack to solve this (and satisfy the fuzzer) was to put a limit on the
-depth of the parse tree. If valid source code contains extremely long expressions or
-if-else chains, then this depth limit may become a problem. The `--depth N` command line
-argument or the `// aven cfmt depth: N` control comment may be used to change the parse depth limit
-in such cases.
 
 ## Performance
 
