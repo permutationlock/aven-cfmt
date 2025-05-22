@@ -2912,6 +2912,13 @@
             .bytes = bytes,
             .tokens = aven_arena_create_list(AvenCToken, arena, bytes.len + 2),
         };
+        // skip utf8 byte order marker if present
+        if (
+            bytes.len > 3 and
+            aven_str_equals(aven_str_head(bytes, 3), aven_str("\xef\xbb\xbf"))
+        ) {
+            ctx.index += 3;
+        }
         list_push(ctx.tokens) = (AvenCToken){ .type = AVEN_C_TOKEN_TYPE_NONE };
         while (!aven_c_lex_step(&ctx)) {}
         list_push(ctx.tokens) = (AvenCToken){
