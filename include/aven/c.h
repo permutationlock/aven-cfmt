@@ -3112,6 +3112,9 @@
         uint32_t depth;
     } AvenCAstCtxState;
 
+    #define AVEN_C_MAX_DECL_DEPTH 4
+    #define AVEN_C_MAX_DECL_SUFFIX 4
+
     static AvenCAstCtx aven_c_ast_init(
         AvenCTokenSet tset,
         uint32_t max_depth,
@@ -4002,7 +4005,7 @@
     }
 
     static uint32_t aven_c_ast_parse_type_name(AvenCAstCtx *ctx) {
-        if (ctx->decl_depth > 4) {
+        if (ctx->decl_depth > AVEN_C_MAX_DECL_DEPTH) {
             aven_c_ast_trap(ctx);
             return 0;
         }
@@ -4225,6 +4228,11 @@
     }
 
     static uint32_t aven_c_ast_parse_declaration_specifier(AvenCAstCtx *ctx) {
+        if (ctx->decl_depth > AVEN_C_MAX_DECL_DEPTH) {
+            aven_c_ast_trap(ctx);
+            return 0;
+        }
+        ctx->decl_depth += 1;
         uint32_t node = aven_c_ast_parse_storage_class_specifier(ctx);
         if (node == 0) {
             node = aven_c_ast_parse_alignment_specifier(ctx);
@@ -4241,6 +4249,7 @@
         if (node == 0) {
             node = aven_c_ast_parse_macro_invocation(ctx);
         }
+        ctx->decl_depth -= 1;
         return node;
     }
 
@@ -4762,7 +4771,7 @@
 
     static uint32_t aven_c_ast_parse_direct_declarator(AvenCAstCtx *ctx) {
         AvenCAstCtxState state = aven_c_ast_save(ctx);
-        if (ctx->decl_depth > 4) {
+        if (ctx->decl_depth > AVEN_C_MAX_DECL_DEPTH) {
             aven_c_ast_error(ctx, state);
             return 0;
         }
@@ -4818,23 +4827,25 @@
             return 0;
         }
         uint32_t last_depth = ctx->depth;
-        for (; i < 4; i += 1) {
+        for (; i < AVEN_C_MAX_DECL_SUFFIX; i += 1) {
+            aven_c_ast_descend(ctx);
             uint32_t suffix_node = aven_c_ast_parse_direct_declarator_op(
                 ctx,
                 node
             );
             if (suffix_node == 0) {
+                aven_c_ast_ascend(ctx);
                 break;
             }
-            aven_c_ast_descend(ctx);
             node = suffix_node;
         }
-        if (i == 4) {
+        if (i == AVEN_C_MAX_DECL_SUFFIX) {
             aven_c_ast_error(ctx, state);
             ctx->decl_depth -= 1;
             return 0;
         }
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t suffix_node = aven_c_ast_parse_direct_declarator_attribute(
                 ctx,
                 node
@@ -4842,7 +4853,6 @@
             if (suffix_node == 0) {
                 break;
             }
-            aven_c_ast_descend(ctx);
             node = suffix_node;
         }
         ctx->depth = last_depth;
@@ -4990,7 +5000,7 @@
         AvenCAstCtx *ctx
     ) {
         AvenCAstCtxState state = aven_c_ast_save(ctx);
-        if (ctx->decl_depth > 4) {
+        if (ctx->decl_depth > AVEN_C_MAX_DECL_DEPTH) {
             aven_c_ast_error(ctx, state);
             return 0;
         }
@@ -5037,18 +5047,18 @@
             node = suffix_node;
         }
         uint32_t last_depth = ctx->depth;
-        for (; i < 4; i += 1) {
+        for (; i < AVEN_C_MAX_DECL_SUFFIX; i += 1) {
+            aven_c_ast_descend(ctx);
             uint32_t suffix_node =
                 aven_c_ast_parse_direct_abstract_declarator_op(ctx, node);
             if (suffix_node == 0) {
                 break;
             }
             node = suffix_node;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         ctx->decl_depth -= 1;
-        if (i == 4) {
+        if (i == AVEN_C_MAX_DECL_SUFFIX) {
             aven_c_ast_error(ctx, state);
             return 0;
         }
@@ -5249,7 +5259,6 @@
         switch (pnc) {
             case AVEN_C_PNC_SQBL: {
                 aven_c_ast_inc_index(ctx);
-                aven_c_ast_descend(ctx);
                 uint32_t arg = aven_c_ast_parse_expr(ctx);
                 if (arg == 0) {
                     aven_c_ast_restore_trap(ctx, state);
@@ -5260,7 +5269,6 @@
                     aven_c_ast_error(ctx, state);
                     break;
                 }
-                aven_c_ast_ascend(ctx);
                 uint32_t scratch_top = aven_c_ast_scratch_init(ctx);
                 list_push(ctx->scratch) = main_token;
                 list_push(ctx->scratch) = end_token;
@@ -5275,7 +5283,6 @@
             }
             case AVEN_C_PNC_PARL: {
                 aven_c_ast_inc_index(ctx);
-                aven_c_ast_descend(ctx);
                 uint32_t arg_list = 0;
                 {
                     uint32_t scratch_top = aven_c_ast_scratch_init(ctx);
@@ -5296,7 +5303,6 @@
                     aven_c_ast_restore_trap(ctx, state);
                     break;
                 }
-                aven_c_ast_ascend(ctx);
                 uint32_t scratch_top = aven_c_ast_scratch_init(ctx);
                 list_push(ctx->scratch) = main_token;
                 list_push(ctx->scratch) = end_token;
@@ -5380,12 +5386,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t suffix_node = aven_c_ast_parse_postfix_op(ctx, node);
             if (suffix_node == 0) {
                 break;
             }
             node = suffix_node;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;
@@ -5577,12 +5583,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t rhs = aven_c_ast_parse_multiply_op(ctx, node);
             if (rhs == 0) {
                 break;
             }
             node = rhs;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;
@@ -5629,12 +5635,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t rhs = aven_c_ast_parse_add_op(ctx, node);
             if (rhs == 0) {
                 break;
             }
             node = rhs;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;
@@ -5680,12 +5686,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t rhs = aven_c_ast_parse_shift_op(ctx, node);
             if (rhs == 0) {
                 break;
             }
             node = rhs;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;
@@ -5733,12 +5739,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t rhs = aven_c_ast_parse_relate_op(ctx, node);
             if (rhs == 0) {
                 break;
             }
             node = rhs;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;
@@ -5784,12 +5790,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t rhs = aven_c_ast_parse_equal_op(ctx, node);
             if (rhs == 0) {
                 break;
             }
             node = rhs;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;
@@ -5822,12 +5828,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t rhs = aven_c_ast_parse_and_op(ctx, node);
             if (rhs == 0) {
                 break;
             }
             node = rhs;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;
@@ -5860,12 +5866,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t rhs = aven_c_ast_parse_xor_op(ctx, node);
             if (rhs == 0) {
                 break;
             }
             node = rhs;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;
@@ -5898,12 +5904,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t rhs = aven_c_ast_parse_or_op(ctx, node);
             if (rhs == 0) {
                 break;
             }
             node = rhs;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;
@@ -5944,12 +5950,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t rhs = aven_c_ast_parse_logical_and_op(ctx, node);
             if (rhs == 0) {
                 break;
             }
             node = rhs;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;
@@ -5990,12 +5996,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t rhs = aven_c_ast_parse_logical_or_op(ctx, node);
             if (rhs == 0) {
                 break;
             }
             node = rhs;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;
@@ -6052,12 +6058,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t rhs = aven_c_ast_parse_conditional_op(ctx, node);
             if (rhs == 0) {
                 break;
             }
             node = rhs;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;
@@ -6112,12 +6118,12 @@
         }
         uint32_t last_depth = ctx->depth;
         for (;;) {
+            aven_c_ast_descend(ctx);
             uint32_t rhs = aven_c_ast_parse_assign_op(ctx, node);
             if (rhs == 0) {
                 break;
             }
             node = rhs;
-            aven_c_ast_descend(ctx);
         }
         ctx->depth = last_depth;
         return node;

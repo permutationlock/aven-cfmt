@@ -237,10 +237,10 @@ Benchmark 3 (1087 runs): ./build_out/aven-cfmt ../raylib/src/rcore.c --columns 1
   branch_misses       125K  ± 2.92K      122K  …  138K         163 (15%)        ⚡- 98.4% ±  0.0%
 ```
 I compiled a release build of `astyle` from upstream source, but the `clang-format` binary was from
-the Chimera Linux package manager.
+my package manager.
 This [poop][2] benchmark was only provided to show that `aven-cfmt` turned out surprisingly fast with
 very little deliberate optimization. The `clang-format` and `astyle` projects
-have very different goals, are highly configurable, and format far more kinds of C code.
+have very different goals, are highly configurable, and format far more kinds of code.
 
 [1]: https://helix-editor.com/
 [2]: https://github.com/andrewrk/poop
