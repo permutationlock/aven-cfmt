@@ -152,9 +152,9 @@ int main(int argc, char **argv) {
         );
         if (in_res.error != AVEN_IO_OPEN_ERROR_NONE) {
             aven_io_perrf(
-                "error: opening '{}' failed with code {}\n",
+                "error: opening '{}' failed with {}\n",
                 aven_fmt_str(unwrap(in_file)),
-                aven_fmt_int((int)in_res.error)
+                aven_fmt_str(aven_io_open_error_str(in_res.error))
             );
             aven_arg_help(args, overview, usage, arg_cols);
             return 1;
@@ -171,9 +171,9 @@ int main(int argc, char **argv) {
     );
     if (rd_res.error != 0) {
         aven_io_perrf(
-            "error: reading '{}' failed with code {}\n",
+            "error: reading '{}' failed with {}\n",
             aven_fmt_str(in_file.valid ? unwrap(in_file) : aven_str("stdin")),
-            aven_fmt_int(rd_res.error)
+            aven_fmt_str(aven_io_error_str(rd_res.error))
         );
         return 1;
     }
@@ -211,9 +211,9 @@ int main(int argc, char **argv) {
         );
         if (out_res.error != AVEN_IO_OPEN_ERROR_NONE) {
             aven_io_perrf(
-                "error: opening '{}' failed with code {}\n",
+                "error: opening '{}' failed with {}\n",
                 aven_fmt_str(unwrap(out_file)),
-                aven_fmt_int((int)out_res.error)
+                aven_fmt_str(aven_io_open_error_str(out_res.error))
             );
             aven_arg_help(args, overview, usage, arg_cols);
             return 1;
@@ -230,15 +230,15 @@ int main(int argc, char **argv) {
     AvenIoResult res = aven_io_writer_push(&file_writer, written);
     if (res.error != 0) {
         aven_io_perrf(
-            "error: writing '{}' failed with code {}\n",
+            "error: writing '{}' failed with {}\n",
             aven_fmt_str(out_file.valid ? unwrap(out_file) : aven_str("stdout")),
-            aven_fmt_int(res.error)
+            aven_fmt_str(aven_io_error_str(res.error))
         );
         return 1;
     }
     if (res.payload != written.len) {
         aven_io_perrf(
-            "error: ran out of space writing to '{}'\n",
+            "error: could not finish writing to '{}'\n",
             aven_fmt_str(out_file.valid ? unwrap(out_file) : aven_str("stdout"))
         );
         return 1;

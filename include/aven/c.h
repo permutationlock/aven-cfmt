@@ -7443,9 +7443,8 @@
             char arrow_buffer[165];
             AvenStr arrow_str = slice_array(arrow_buffer);
             size_t arrow_len = 0;
-            size_t start_col = eloc.col - (token_index - start);
-            size_t ln_digits = aven_fmt_uint_decimal_digits(eloc.line);
-            ln_digits += aven_fmt_uint_decimal_digits(start_col);
+            size_t ln_digits = aven_fmt_uint_decimal_digits(eloc.line) +
+                aven_fmt_uint_decimal_digits(eloc.col);
             assert(ln_digits < 64);
             for (size_t i = 0; i < ln_digits + 1; i += 1) {
                 get(arrow_str, arrow_len) = ' ';
@@ -7461,24 +7460,20 @@
             AvenStr error_str = exp_str.valid ?
                 aven_fmt(
                     &temp_arena,
-                    "at {}:{} expected {} '{}', found:\n" "{}:{}: {}\n" "  {}",
-                    aven_fmt_uint(eloc.line),
-                    aven_fmt_uint(eloc.col),
+                    "expected {} '{}':\n" "{}:{}: {}\n" "  {}",
                     aven_fmt_str(exp_type),
                     aven_fmt_str(exp_str.value),
                     aven_fmt_uint(eloc.line),
-                    aven_fmt_uint(start_col),
+                    aven_fmt_uint(eloc.col),
                     aven_fmt_str(line),
                     aven_fmt_str(arrow_str)
                 ) :
                 aven_fmt(
                     &temp_arena,
-                    "at {}:{} expected {}, found:\n" "{}:{}: {}\n" "  {}",
-                    aven_fmt_uint(eloc.line),
-                    aven_fmt_uint(eloc.col),
+                    "expected {}:\n" "{}:{}: {}\n" "  {}",
                     aven_fmt_str(exp_type),
                     aven_fmt_uint(eloc.line),
-                    aven_fmt_uint(start_col),
+                    aven_fmt_uint(eloc.col),
                     aven_fmt_str(line),
                     aven_fmt_str(arrow_str)
                 );
