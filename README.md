@@ -17,18 +17,35 @@ specifiers, but attributes must occur either before all other
 declaration specifiers, or after a declarator. It will also parse C++ `extern "C"`
 blocks to allow for "universal" header files.
 
-### Preprocessor directives
+The formatter does not perform semantic analysis or try to follow include directives. Therefore
+it is impossible to handle all possible uses of the
+C preprocessor. Instead, common uses of macros are parsed directly into the AST.
 
-Standard preprocessor directives (`#if`, `#else`, etc) and macros
-(`#define A` or `#define A(...)`) will be parsed
-and pretty printed, but some heavy restrictions are placed on their use.
-A directive/macro may only be followed by a single token, a type name, an
+### Macro definitions
+
+Macro `#define A` and `#define A(...)` directives are each parsed into a
+separate AST. Each macro AST is rendered when the corresponding portion of the
+primary AST is rendered.
+A macro definiton may be followed by a single token, a type name, an
 initializer list, a list of declaration specifiers, or an expression statement,
-a `do` statement, or a declaration without the terminating `;`.
-The `#` and `##` operators are allowed in preprocessor code.
+a `do` statement, or a declaration, always ommitting terminating `;` characters.
+The special `#` and `##` operators are allowed in preprocessor code.
 
-Source files must be parseable C even with all
-preprocessor directive lines removed, e.g. the following is invalid
+### Macro invocations
+
+A macro invocation is an identifier followed by an optional parenthesised parameter
+list of assignment expressions and type names. Macro invocations may appear in
+type names, declaration specifiers, and compound string literals. In addition, a
+postfix parenthesis expression is allowed to contain type names in its parameter
+list to allow type parameterised macro invocations within expressions.
+
+### Conditional directives
+
+Conditional directives (`#if`, `#else`, `#endif`, `#ifdef`, etc.)
+are parsed and rendered in exactly the same way as macro definitions.
+In the primary translation unit AST, conditional directives are simply ignored.
+Therefore a source file must be still parseable when all
+preprocessor directive lines are removed. E.g. the following is invalid
 according to `aven-cfmt`.
 ```C
 #ifdef A
@@ -39,17 +56,13 @@ int bar(int n){
     // body
 }
 ```
-In practice, most C files will already follow these rules.
-If the column width is set to unlimited (`--columns 0`), then `aven-cfmt`
-will format most Raylib and GLFW source files. The files it refuses to format
-use either unsupported macros or non-standard extensions like the MSVC
-`(__stdcall *fn)` declarators. It would be simple to modify these files
-to comply, but, of course, formatting code from established projects is not a
-goal of `aven-cfmt`.
 
-Include directives (`#include`) will also be parsed and pretty printed. All other
-directives will not be parsed, including `#error`, `#warning`, and `#pragma`; all such
-directives are rendered unmodified from the original source.
+### Other directives
+
+Include directives (`#include`) are parsed and pretty printed, but
+all other directives (`#error`, `#warning`, `#pragma`, etc.) are treated as
+comments and renderd unmodified from source. The `_Pragma("...")` variety
+of pragma directives are not allowed.
 
 ### Character sets and white space
 
@@ -70,11 +83,26 @@ rendered if they appear within comments or string literals.
 ### Parse depth
 
 The `aven-cfmt` C parser is not particularly well designed, and a combinatorial explosion of backtracking can
-occur with some pathological inputs. My hack to solve this (and satisfy the fuzzer) was to put a limit on the
-depth of the parse tree. If valid source code contains extremely long expressions and/or
-if-else chains, then this depth limit may become a problem. The `--depth N` command line
-argument or the `// aven cfmt depth: N` control comment may be used to change the parse depth limit
-in such cases.
+occur with some pathological inputs. My hack to solve this (and satisfy the allmighty fuzzer)
+was to simply place a limit on the depth of the parse tree.
+If valid source code contains extremely long expressions or
+if-else chains, then the `--depth N` command line
+argument or the `// aven cfmt depth: N` control comment may be used to expand the limit.
+
+### Is this too restrictive?
+
+I wrote this formatter for my own personal use, and I generally write code that
+follows the above rules. In the few places where I needed to make changes to
+satisfy `aven-cfmt`, I believe that those changes were for the better.
+
+A surprising portion of the repos I keep cloned on my machine also already
+conform to the above restrictions. The `aven-cfmt --columns 0` command
+will format most Raylib and GLFW source files. The files it refuses to format
+use either unsupported macros (not wrapping blocks in `do` statements, or
+terminating macros with `;` or `,`), or unsupported extensions (MSVC
+`(__stdcall *fn)` declarators). It would be simple to modify such files
+to comply, but, of course, re-formatting code from well established projects is
+not a goal of `aven-cfmt`.
 
 ## Errors
 
@@ -89,11 +117,6 @@ broken to fit within 80 columns, e.g. due to a long identifier or excessive inde
 then the formatter will error and report the offending
 line in the original source file.
 
-The formatter does not perform any semantic analysis, and it's error messages will
-pale in comparison to any real C compiler. The reports are primarily for debugging cases
-where a valid C source file doesn't fit within the restrictive
-flavor of C that `aven-cfmt` can parse.
-
 ## Building
 
 Ensure that you have pulled the `libaven` submodule dependency.
@@ -105,7 +128,7 @@ To build the project with your favorite C compiler `cc`, run
 ```Shell
 $ cc -I deps/libaven/include -I include/ -o aven-cfmt src/aven-cfmt.c
 ```
-I also have a C build system written in C that I provide for all of my projects.
+The project also provides a build system written in C.
 To build the build system run either
 ```Shell
 $ make
@@ -121,7 +144,7 @@ $ ./build
 The resulting binary will be located in the `build_out` directory.
 Flags may be specified with `--ccflags`
 ```Shell
-$ ./build --ccflags "-O3 -march=native -g0 -fstrict-aliasing"
+$ ./build --ccflags "-O3 -march=native -g0"
 ```
 To run the test suite, run
 ```Shell
@@ -141,18 +164,6 @@ $ ./build help
 The default behavior is to read from the specified `src_file` and write to `stdout`.
 ```Shell
 $ aven-cfmt unformatted.c > formatted.c
-```
-An output file can be specified with `--out`.
-```Shell
-$ aven-cfmt unformatted.c --out formatted.c
-```
-Files can be formatted in-place (with no modification on error) using `--in-place`.
-```Shell
-$ aven-cfmt --in-place myfile.c
-```
-The formatter will read from stdin if the `--stdin` flag is specified.
-```Shell
-$ aven-cfmt --stdin < unformatted.c > formatted.c
 ```
 A full list of command line options is available in the help message.
 ```Shell
@@ -196,61 +207,60 @@ If you use a (neo)vim variant, then you can format the active buffer with
 `%!aven-fmt --stdin`. With this basic command the buffer will be overwritten with the
 `stderr` error message if a parse or render error occurs, but that is simple to undo.
 
+## Performance
+
+My benchmarks show that `aven-cfmt` formats at ~30-40MB/sec on my Intel N100 mini pc.
+```Shell
+$ lscpu | grep "Model name"
+Model name:                           Intel(R) N100
+$ ./build --ccflags "-O3"
+clang -O3 -I deps/libaven/include -I ./include -c -o build_out/aven-cfmt.o ./src/aven-cfmt.c
+clang -o build_out/aven-cfmt build_out/aven-cfmt.o
+rm build_out/aven-cfmt.o
+$ poop "clang-format ../raylib/src/rcore.c" "astyle --style=google --stdin=../raylib/src/rcore.c" "./build_out/aven-cfmt --columns 128 ../raylib/src/rcore.c"
+Benchmark 1 (10 runs): clang-format ../raylib/src/rcore.c
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time           527ms ± 4.34ms     519ms …  531ms          0 ( 0%)        0%
+  peak_rss           94.3MB ±  154KB    94.1MB … 94.6MB          0 ( 0%)        0%
+  cpu_cycles         1.70G  ± 6.84M     1.69G  … 1.71G           0 ( 0%)        0%
+  instructions       3.88G  ± 1.02M     3.88G  … 3.88G           0 ( 0%)        0%
+  cache_references   39.9M  ±  395K     39.5M  … 40.7M           0 ( 0%)        0%
+  cache_misses       13.3M  ±  530K     12.6M  … 14.1M           0 ( 0%)        0%
+  branch_misses      7.76M  ± 30.6K     7.71M  … 7.81M           0 ( 0%)        0%
+Benchmark 2 (152 runs): astyle --style=google --stdin=../raylib/src/rcore.c
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          33.0ms ±  626us    32.1ms … 38.5ms          6 ( 4%)        ⚡- 93.7% ±  0.1%
+  peak_rss           3.55MB ±  109KB    3.31MB … 3.79MB          0 ( 0%)        ⚡- 96.2% ±  0.1%
+  cpu_cycles          106M  ±  726K      105M  …  110M           6 ( 4%)        ⚡- 93.8% ±  0.1%
+  instructions        282M  ± 56.6K      282M  …  283M           1 ( 1%)        ⚡- 92.7% ±  0.0%
+  cache_references   31.7K  ± 6.92K     18.3K  … 61.9K           1 ( 1%)        ⚡- 99.9% ±  0.2%
+  cache_misses       7.76K  ± 2.18K     3.93K  … 19.5K           9 ( 6%)        ⚡- 99.9% ±  0.6%
+  branch_misses       515K  ± 16.9K      500K  …  665K          11 ( 7%)        ⚡- 93.4% ±  0.1%
+Benchmark 3 (1023 runs): ./build_out/aven-cfmt --columns 128 ../raylib/src/rcore.c
+  measurement          mean ± σ            min … max           outliers         delta
+  wall_time          4.86ms ±  623us    4.31ms … 8.00ms        112 (11%)        ⚡- 99.1% ±  0.1%
+  peak_rss           1.87MB ± 59.4KB    1.72MB … 1.97MB          0 ( 0%)        ⚡- 98.0% ±  0.0%
+  cpu_cycles         12.8M  ±  225K     12.3M  … 14.5M           6 ( 1%)        ⚡- 99.2% ±  0.0%
+  instructions       31.3M  ±  212      31.3M  … 31.3M           0 ( 0%)        ⚡- 99.2% ±  0.0%
+  cache_references   9.62K  ± 4.19K     5.41K  … 61.9K          17 ( 2%)        ⚡-100.0% ±  0.1%
+  cache_misses       1.45K  ±  629      1.04K  … 16.6K          14 ( 1%)        ⚡-100.0% ±  0.2%
+  branch_misses       136K  ± 5.67K      121K  …  150K           0 ( 0%)        ⚡- 98.2% ±  0.1%
+```
+I compiled a release build of `astyle` from upstream source, but the `clang-format` binary was from
+my package manager.
+This [poop][2] benchmark was only provided to show that, due to its simplicity, `aven-cfmt`
+seems to be very fast, even though I did very little deliberate optimization.
+
 ## Fuzzing
 
-If you have `clang` installed, the repo contains a basic `libfuzzer` fuzzing setup that may be compiled and
-run with
+The repo contains a basic [libfuzzer][3] fuzzing setup. If you have `clang` installed, then
+the fuzzer can be compiled and run with
 ```Shell
 $ ./clang_fuzz.sh
 ```
 The fuzzer runs indefinitely, halting upon encountering a crash, failed assert, sanitizer trap, or
 an input that takes longer than 1 second to parse and render.
 
-## Performance
-
-My benchmarks show that `aven-cfmt` formats at ~30-40MB/sec on my Intel N100 mini pc.
-Through fuzzing, I am reasonably confident that it won't hang or crash, even
-in the face of pathologies.
-```Shell
-$ lscpu | grep "Model name"
-Model name:                           Intel(R) N100
-$ ./build --ccflags "-O3 --target=x86_64-linux"
-clang -O3 --target=x86_64-linux -I deps/libaven/include -I ./include -c -o build_out/aven-cfmt.o ./src/aven-cfmt.c
-clang -o build_out/aven-cfmt build_out/aven-cfmt.o
-rm build_out/aven-cfmt.o
-$ poop "clang-format ../raylib/src/rcore.c" "astyle --style=google --stdin=../raylib/src/rcore.c" "./build_out/aven-cfmt ../raylib/src/rcore.c --columns 128"
-Benchmark 1 (10 runs): clang-format ../raylib/src/rcore.c
-  measurement          mean ± σ            min … max           outliers         delta
-  wall_time           520ms ± 2.06ms     518ms …  525ms          1 (10%)        0%
-  peak_rss           94.3MB ±  108KB    94.1MB … 94.4MB          0 ( 0%)        0%
-  cpu_cycles         1.69G  ± 2.96M     1.69G  … 1.70G           0 ( 0%)        0%
-  instructions       3.88G  ±  623K     3.88G  … 3.88G           0 ( 0%)        0%
-  cache_references   39.5M  ±  154K     39.3M  … 39.8M           0 ( 0%)        0%
-  cache_misses       12.7M  ± 61.5K     12.7M  … 12.8M           0 ( 0%)        0%
-  branch_misses      7.74M  ± 17.4K     7.71M  … 7.76M           0 ( 0%)        0%
-Benchmark 2 (153 runs): astyle --style=google --stdin=../raylib/src/rcore.c
-  measurement          mean ± σ            min … max           outliers         delta
-  wall_time          32.8ms ±  480us    32.3ms … 37.2ms          2 ( 1%)        ⚡- 93.7% ±  0.1%
-  peak_rss           3.55MB ±  104KB    3.31MB … 3.79MB          0 ( 0%)        ⚡- 96.2% ±  0.1%
-  cpu_cycles          106M  ±  567K      105M  …  108M           3 ( 2%)        ⚡- 93.7% ±  0.0%
-  instructions        282M  ± 52.1K      282M  …  283M           1 ( 1%)        ⚡- 92.7% ±  0.0%
-  cache_references   30.5K  ± 3.10K     22.7K  … 38.5K           0 ( 0%)        ⚡- 99.9% ±  0.1%
-  cache_misses       7.69K  ± 1.36K     5.95K  … 19.9K          10 ( 7%)        ⚡- 99.9% ±  0.1%
-  branch_misses       515K  ± 14.6K      500K  …  610K          11 ( 7%)        ⚡- 93.3% ±  0.1%
-Benchmark 3 (1087 runs): ./build_out/aven-cfmt ../raylib/src/rcore.c --columns 128
-  measurement          mean ± σ            min … max           outliers         delta
-  wall_time          4.57ms ±  544us    4.13ms … 7.03ms        132 (12%)        ⚡- 99.1% ±  0.1%
-  peak_rss           1.86MB ± 58.5KB    1.65MB … 1.97MB          1 ( 0%)        ⚡- 98.0% ±  0.0%
-  cpu_cycles         11.9M  ±  158K     11.7M  … 13.4M          69 ( 6%)        ⚡- 99.3% ±  0.0%
-  instructions       28.9M  ±  208      28.9M  … 28.9M           0 ( 0%)        ⚡- 99.3% ±  0.0%
-  cache_references   9.97K  ± 4.54K     5.37K  … 60.4K          20 ( 2%)        ⚡-100.0% ±  0.0%
-  cache_misses       1.39K  ±  640       946   … 17.0K          24 ( 2%)        ⚡-100.0% ±  0.0%
-  branch_misses       125K  ± 2.92K      122K  …  138K         163 (15%)        ⚡- 98.4% ±  0.0%
-```
-I compiled a release build of `astyle` from upstream source, but the `clang-format` binary was from
-my package manager.
-This [poop][2] benchmark was only provided to show that, due to its simplicity, `aven-cfmt`
-seems to run very fast, even though I did very little deliberate optimization.
-
 [1]: https://helix-editor.com/
 [2]: https://github.com/andrewrk/poop
+[3]: https://llvm.org/docs/LibFuzzer.html
