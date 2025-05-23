@@ -106,7 +106,6 @@ not a goal of `aven-cfmt`.
 $ for i in ../raylib/src/*.c; do echo $i && ./build_out/aven-cfmt --columns 128 $i > /dev/null; done
 ../raylib/src/raudio.c
 ../raylib/src/rcore.c
-../raylib/src/rcore.old.c
 ../raylib/src/rglfw.c
 ../raylib/src/rmodels.c
 error: error at 5247:9: expected punctuator '(', found:
