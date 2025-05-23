@@ -4,11 +4,6 @@ This repository contains a C source code lexer, parser, and AST
 renderer in `aven/c.h`. All three are combined into a source code formating
 application in `src/aven-cfmt.c`.
 
-I am not a fan of any configuration of `clang-format`,
-`indent`, or `astyle` (believe me, I tried). The `aven-cfmt` C code formatter
-is specifically tailored to my code aesthetic and supports minimal configuration;
-it's trying to be `zig fmt` or `go fmt`, not `clang-format`.
-
 ## Limitations
 
 The formatter is designed to parse code that follows the C99 or C11 standard
@@ -67,22 +62,21 @@ of pragma directives are not allowed.
 Source files are assumed to be ascii or utf8 encoded. The source file is
 verified to be valid utf8 prior to tokenization.
 The tokenizer only allows non-ascii codepoints in comments, character
-constants, and string literals. With regards to column width, each utf8 codepoint
-is counted as one column.
+constants, and string literals. Each utf8 codepoint is counted as one column
+during rendering.
 
 The only whitespace characters that will be rendered are spaces, newlines, and tabs.
 Windows `\r\n` line endings will be parsed the same as `\n`, and the formatter
 will render all line endings as `\n`.
 Carriage return characters `\r` are illegal outside of line endings. All indents
-are rendered with spaces.
-Tab characters `\t` are legal everywhere whitespace is allowed, but will only be
+are rendered with space, tabs will only be
 rendered if they appear within comments or string literals.
 
 ### Parse depth
 
 A combinatorial explosion of backtracking can
-occur with some pathological inputs. Fixing the underlying issue was
-too tricky, so to solve this (and satisfy the allmighty fuzzer)
+occur with some pathological inputs. Fixing the underlying issue proved
+too tricky for the time being, so to solve this (and satisfy the allmighty fuzzer)
 I simply placed a limit on the depth of the parse tree.
 If valid source code contains extremely long expressions or
 if-else chains, then the `--depth N` command line
@@ -93,7 +87,7 @@ argument or the `// aven cfmt depth: N` control comment may be used to expand th
 It works for my code, but a surprisingly large portion of the repos I keep cloned on my machine are
 formattable out of the box as well. For example, `aven-cfmt --columns 0`
 will accept most Raylib and GLFW source files. The files it refuses to format
-use either unsupported macros (not using `do` statements, including
+contain either C++ code, unsupported macros (not using `do` statements, including
 terminating `;`), or extensions (MSVC
 `(__stdcall *fn)` declarators). It would be simple to modify such files
 to comply, but, of course, re-formatting code from well established projects is
@@ -112,6 +106,7 @@ error: expected punctuator '(':
 ../raylib/src/rtextures.c
 ../raylib/src/utils.c
 ```
+The Raylib header files are another story, that is where the offending macros reside.
 
 ## Building
 
