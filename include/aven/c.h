@@ -7459,7 +7459,7 @@
             arrow_str = aven_str_head(arrow_str, arrow_len);
             AvenStr error_str = exp_str.valid ?
                 aven_fmt(
-                    &temp_arena,
+                    arena,
                     "expected {} '{}':\n" "{}:{}: {}\n" "  {}",
                     aven_fmt_str(exp_type),
                     aven_fmt_str(exp_str.value),
@@ -7469,7 +7469,7 @@
                     aven_fmt_str(arrow_str)
                 ) :
                 aven_fmt(
-                    &temp_arena,
+                    arena,
                     "expected {}:\n" "{}:{}: {}\n" "  {}",
                     aven_fmt_str(exp_type),
                     aven_fmt_uint(eloc.line),
@@ -7659,7 +7659,7 @@
         }
         slice_copy(aven_str_tail(ctx->line, ctx->cursor), str);
         ctx->cursor += (uint32_t)str.len;
-        ctx->width += cpt_res.payload;
+        ctx->width += (uint32_t)cpt_res.payload;
         return true;
     }
 
@@ -10362,8 +10362,7 @@
                 ),
             };
         }
-        AvenArena temp_arena = *arena;
-        AvenCTokenSet tset = aven_c_lex(src, &temp_arena);
+        AvenCTokenSet tset = aven_c_lex(src, arena);
         for (uint32_t i = 1; i < tset.tokens.len; i += 1) {
             AvenCToken token = get(tset.tokens, i);
             if (token.type < AVEN_C_TOKEN_TYPE_CMT) {
@@ -10373,7 +10372,7 @@
                 continue;
             }
             AvenStr token_str = aven_c_token_str(tset, i);
-            AvenCConfig cfg = aven_c_parse_config_comment(token_str, temp_arena);
+            AvenCConfig cfg = aven_c_parse_config_comment(token_str, *arena);
             switch (cfg.type) {
                 case AVEN_C_CONFIG_TYPE_DISABLE: {
                     aven_io_writer_push(
@@ -10402,17 +10401,17 @@
             depth = AVEN_C_MAX_PARSE_DEPTH;
         }
         uint32_t max_depth = (uint32_t)min(AVEN_C_MAX_PARSE_DEPTH, depth);
-        AvenCAstResult ast_res = aven_c_ast_parse(tset, max_depth, &temp_arena);
+        AvenCAstResult ast_res = aven_c_ast_parse(tset, max_depth, arena);
         if (ast_res.type == AVEN_C_AST_RESULT_TYPE_ERROR) {
             return (AvenCFmtResult){
                 .error = AVEN_C_FMT_ERROR_PARSE,
-                .msg = aven_str_copy(ast_res.data.error, arena),
+                .msg = ast_res.data.error,
             };
         }
         if (column_width <= 0 or column_width > AVEN_C_MAX_COLUMN_WIDTH) {
             column_width = AVEN_C_MAX_COLUMN_WIDTH;
         }
-        AvenStr indent_str = aven_arena_create_slice(char, &temp_arena, indent);
+        AvenStr indent_str = aven_arena_create_slice(char, arena, indent);
         for (size_t i = 0; i < indent_str.len; i += 1) {
             get(indent_str, i) = ' ';
         }
@@ -10424,7 +10423,7 @@
             (uint32_t)column_width,
             newline,
             indent_str,
-            &temp_arena
+            arena
         );
         if (ren_res.error != AVEN_C_AST_RENDER_ERROR_NONE) {
             return (AvenCFmtResult){
@@ -10432,7 +10431,7 @@
                     AVEN_C_FMT_ERROR_WRITE :
                     AVEN_C_FMT_ERROR_RENDER,
                 .io_error = ren_res.io_error,
-                .msg = aven_str_copy(ren_res.msg, arena),
+                .msg = ren_res.msg,
             };
         }
         return (AvenCFmtResult){ 0 };

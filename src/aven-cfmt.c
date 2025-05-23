@@ -94,9 +94,11 @@ int main(int argc, char **argv) {
             break;
         }
         case AVEN_ARG_ERROR_HELP: {
+            free(mem);
             return 0;
         }
         default: {
+            free(mem);
             return 1;
         }
     }
@@ -111,6 +113,7 @@ int main(int argc, char **argv) {
         if (aven_arg_get_bool(args, "--stdin")) {
             aven_io_perr("error: cannot specify both --stdin and src_file\n");
             aven_arg_help(args, overview, usage, arg_cols);
+            free(mem);
             return 1;
         }
         in_file.valid = true;
@@ -118,6 +121,7 @@ int main(int argc, char **argv) {
     } else if (!aven_arg_get_bool(args, "--stdin")) {
         aven_io_perr("error: specify a src_file to format or --stdin\n");
         aven_arg_help(args, overview, usage, arg_cols);
+        free(mem);
         return 1;
     }
 
@@ -127,6 +131,7 @@ int main(int argc, char **argv) {
         if (in_place) {
             aven_io_perr("error: cannot specify both --out and --in-place\n");
             aven_arg_help(args, overview, usage, arg_cols);
+            free(mem);
             return 1;
         }
         out_file.valid = true;
@@ -136,6 +141,7 @@ int main(int argc, char **argv) {
         if (!in_file.valid) {
             aven_io_perr("error: specify a src_file to use --in-place\n");
             aven_arg_help(args, overview, usage, arg_cols);
+            free(mem);
             return 1;
         }
         assert(out_file.valid == false);
@@ -157,6 +163,7 @@ int main(int argc, char **argv) {
                 aven_fmt_str(aven_io_open_error_str(in_res.error))
             );
             aven_arg_help(args, overview, usage, arg_cols);
+            free(mem);
             return 1;
         }
         in_fd.valid = true;
@@ -175,6 +182,7 @@ int main(int argc, char **argv) {
             aven_fmt_str(in_file.valid ? unwrap(in_file) : aven_str("stdin")),
             aven_fmt_str(aven_io_error_str(rd_res.error))
         );
+        free(mem);
         return 1;
     }
     AvenStr src = {
@@ -198,6 +206,7 @@ int main(int argc, char **argv) {
     );
     if (fmt_res.error != AVEN_C_FMT_ERROR_NONE) {
         aven_io_perrf("error: {}\n", aven_fmt_str(fmt_res.msg));
+        free(mem);
         return 1;
     }
     ByteSlice written = slice_head(writer.buffer, writer.index);
@@ -216,6 +225,7 @@ int main(int argc, char **argv) {
                 aven_fmt_str(aven_io_open_error_str(out_res.error))
             );
             aven_arg_help(args, overview, usage, arg_cols);
+            free(mem);
             return 1;
         }
         out_fd.valid = true;
@@ -234,6 +244,7 @@ int main(int argc, char **argv) {
             aven_fmt_str(out_file.valid ? unwrap(out_file) : aven_str("stdout")),
             aven_fmt_str(aven_io_error_str(res.error))
         );
+        free(mem);
         return 1;
     }
     if (res.payload != written.len) {
@@ -241,8 +252,9 @@ int main(int argc, char **argv) {
             "error: could not finish writing to '{}'\n",
             aven_fmt_str(out_file.valid ? unwrap(out_file) : aven_str("stdout"))
         );
+        free(mem);
         return 1;
     }
-
+    free(mem);
     return 0;
 }
