@@ -7461,9 +7461,7 @@
             AvenStr error_str = exp_str.valid ?
                 aven_fmt(
                     &temp_arena,
-                    "error at {}:{}: expected {} '{}', found:\n"
-                    "{}:{}: {}\n  {}"
-                    ,
+                    "at {}:{} expected {} '{}', found:\n" "{}:{}: {}\n" "  {}",
                     aven_fmt_uint(eloc.line),
                     aven_fmt_uint(eloc.col),
                     aven_fmt_str(exp_type),
@@ -7475,7 +7473,7 @@
                 ) :
                 aven_fmt(
                     &temp_arena,
-                    "error at {}:{}: expected {}, found:\n" "{}:{}: {}\n  {}",
+                    "at {}:{} expected {}, found:\n" "{}:{}: {}\n" "  {}",
                     aven_fmt_uint(eloc.line),
                     aven_fmt_uint(eloc.col),
                     aven_fmt_str(exp_type),
@@ -7487,7 +7485,7 @@
             AvenStr final_str = ctx.depth_exceeded ?
                 aven_fmt(
                     arena,
-                    "parse depth of {} exceeded\n{}",
+                    "parse depth of {} exceeded\n" "{}",
                     aven_fmt_uint(ctx.max_depth),
                     aven_fmt_str(error_str)
                 ) :

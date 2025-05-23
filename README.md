@@ -108,7 +108,7 @@ $ for i in ../raylib/src/*.c; do echo $i && ./build_out/aven-cfmt --columns 128 
 ../raylib/src/rcore.c
 ../raylib/src/rglfw.c
 ../raylib/src/rmodels.c
-error: error at 5247:9: expected punctuator '(', found:
+error: at 5247:9 expected punctuator '(', found:
 5247:1:         int n = 0; \
                 ^
 ../raylib/src/rshapes.c
