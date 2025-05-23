@@ -13,9 +13,7 @@ it's trying to be `zig fmt` or `go fmt`, not `clang-format`.
 
 The formatter is designed to parse code that follows the C99 or C11 standard
 with some GNU extensions. It will parse GNU inline assembly and attribute
-specifiers, but attributes must occur either before all other
-declaration specifiers, or after a declarator. It will also parse C++ `extern "C"`
-blocks to allow for "universal" header files.
+specifiers. It will also parse C++ `extern "C"` blocks to allow for "universal" header files.
 
 The formatter does not perform semantic analysis or try to follow include directives. Therefore
 it is impossible to handle all possible uses of the
@@ -61,7 +59,7 @@ int bar(int n){
 
 Include directives (`#include`) are parsed and pretty printed, but
 all other directives (`#error`, `#warning`, `#pragma`, etc.) are treated as
-comments and renderd unmodified from source. The `_Pragma("...")` variety
+comments and rendered unmodified from source. The `_Pragma("...")` variety
 of pragma directives are not allowed.
 
 ### Character sets and white space
@@ -82,7 +80,8 @@ rendered if they appear within comments or string literals.
 
 ### Parse depth
 
-The `aven-cfmt` C parser is not particularly well designed, and a combinatorial explosion of backtracking can
+The `aven-cfmt` C parser was written haphazardly with the C11 standard's grammar
+open on my left monitor. As a result, a combinatorial explosion of backtracking can
 occur with some pathological inputs. My hack to solve this (and satisfy the allmighty fuzzer)
 was to simply place a limit on the depth of the parse tree.
 If valid source code contains extremely long expressions or
@@ -106,16 +105,12 @@ not a goal of `aven-cfmt`.
 
 ## Errors
 
-The formatter will only render code that it can correctly parse.
-It will report the first parse error encountered, along with the exact location of
-the error in the source file.
-
-By default lines are required to render
+The formatter will report the first parse error encountered, along with the exact location of
+the error in the source file. By default lines are required to render
 within 80 columns, with a slight overflow allowance
 to simplify the rendering logic. If a line cannot be
 broken to fit within 80 columns, e.g. due to a long identifier or excessive indent depth,
-then the formatter will error and report the offending
-line in the original source file.
+then the formatter will report the offending line in the original source file.
 
 ## Building
 
