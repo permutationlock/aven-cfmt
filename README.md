@@ -26,7 +26,7 @@ separate AST. Each macro AST is rendered when the corresponding portion of the
 primary AST is rendered.
 A macro definiton may be followed by a single token, a type name, an
 initializer list, a list of declaration specifiers, or an expression statement,
-a `do` statement, or a declaration, always ommitting terminating `;` characters.
+a `do` statement, or a declaration, ommitting the terminating `;`.
 The special `#` and `##` operators are allowed in preprocessor code.
 
 ### Macro invocations
@@ -80,25 +80,21 @@ rendered if they appear within comments or string literals.
 
 ### Parse depth
 
-The `aven-cfmt` C parser was written haphazardly with the C11 standard's grammar
-open on my left monitor. As a result, a combinatorial explosion of backtracking can
-occur with some pathological inputs. My hack to solve this (and satisfy the allmighty fuzzer)
-was to simply place a limit on the depth of the parse tree.
+A combinatorial explosion of backtracking can
+occur with some pathological inputs. Fixing the underlying issue was
+too tricky, so to solve this (and satisfy the allmighty fuzzer)
+I simply placed a limit on the depth of the parse tree.
 If valid source code contains extremely long expressions or
 if-else chains, then the `--depth N` command line
 argument or the `// aven cfmt depth: N` control comment may be used to expand the limit.
 
 ### Is this too restrictive?
 
-I wrote this formatter for my own personal use, and I generally write code that
-follows the above rules. In the few places where I needed to make changes to
-satisfy `aven-cfmt`, I believe that those changes were for the better.
-
-A surprisingly large portion of the repos I keep cloned on my machine are
-formattable out of the box as well. For example, the `aven-cfmt --columns 0` command
+It works for my code, but a surprisingly large portion of the repos I keep cloned on my machine are
+formattable out of the box as well. For example, `aven-cfmt --columns 0`
 will accept most Raylib and GLFW source files. The files it refuses to format
-use either unsupported macros (not wrapping blocks in `do` statements, or
-terminating macros with `;` or `,`), or unsupported extensions (MSVC
+use either unsupported macros (not using `do` statements, including
+terminating `;`), or extensions (MSVC
 `(__stdcall *fn)` declarators). It would be simple to modify such files
 to comply, but, of course, re-formatting code from well established projects is
 not a goal of `aven-cfmt`.
@@ -117,15 +113,6 @@ error: expected punctuator '(':
 ../raylib/src/utils.c
 ```
 
-## Errors
-
-The formatter will report the first parse error encountered, along with the exact location of
-the error in the source file. By default lines are required to render
-within 80 columns, with a slight overflow allowance
-to simplify the rendering logic. If a line cannot be
-broken to fit within 80 columns, e.g. due to a long identifier or excessive indent depth,
-then the formatter will report the offending line in the original source file.
-
 ## Building
 
 Ensure that you have pulled the `libaven` submodule dependency.
@@ -138,35 +125,20 @@ To build the project with your favorite C compiler `cc`, run
 $ cc -I deps/libaven/include -I include/ -o aven-cfmt src/aven-cfmt.c
 ```
 The project also provides a build system written in C.
-To build the build system run either
-```Shell
-$ make
-```
-or
+To build the build system you can either use `make` or
 ```Shell
 $ cc -o build build.c
 ```
-To build `aven-cfmt`, run
-```Shell
-$ ./build
-```
+To build `aven-cfmt`, run `./build`.
 The resulting binary will be located in the `build_out` directory.
 Flags may be specified with `--ccflags`
 ```Shell
 $ ./build --ccflags "-O3 -march=native -g0"
 ```
-To run the test suite, run
-```Shell
-$ ./build test
-```
-To clean up all build artifacts, run
-```Shell
-$ ./build clean
-```
+To run the test suite, run `./build test`.
+To clean up all build artifacts, run `./build clean`.
 To see a full list of available build system flags, run
-```Shell
-$ ./build help
-```
+`./build help`.
 
 ## Usage
 
@@ -192,7 +164,7 @@ options:
     --in-place [false]    format src_file in-place (default=false)
     --columns N           column width, 0 for no limit (default=80)
     --indent N            indent width (default=4)
-    --depth N             parse depth, 0 for no limit (default=32)
+    --depth N             parse depth, 0 for no limit (default=40)
     --help                show this  message
 ```
 
