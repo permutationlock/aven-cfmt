@@ -94,14 +94,29 @@ I wrote this formatter for my own personal use, and I generally write code that
 follows the above rules. In the few places where I needed to make changes to
 satisfy `aven-cfmt`, I believe that those changes were for the better.
 
-A surprising portion of the repos I keep cloned on my machine also already
-conform to the above restrictions. The `aven-cfmt --columns 0` command
-will format most Raylib and GLFW source files. The files it refuses to format
+A surprisingly large portion of the repos I keep cloned on my machine are
+formattable out of the box as well. For example, the `aven-cfmt --columns 0` command
+will accept most Raylib and GLFW source files. The files it refuses to format
 use either unsupported macros (not wrapping blocks in `do` statements, or
 terminating macros with `;` or `,`), or unsupported extensions (MSVC
 `(__stdcall *fn)` declarators). It would be simple to modify such files
 to comply, but, of course, re-formatting code from well established projects is
 not a goal of `aven-cfmt`.
+```Shell
+$ for i in ../raylib/src/*.c; do echo $i && ./build_out/aven-cfmt --columns 128 $i > /dev/null; done
+../raylib/src/raudio.c
+../raylib/src/rcore.c
+../raylib/src/rcore.old.c
+../raylib/src/rglfw.c
+../raylib/src/rmodels.c
+error: error at 5247:9: expected punctuator '(', found:
+5247:1:         int n = 0; \
+                ^
+../raylib/src/rshapes.c
+../raylib/src/rtext.c
+../raylib/src/rtextures.c
+../raylib/src/utils.c
+```
 
 ## Errors
 
