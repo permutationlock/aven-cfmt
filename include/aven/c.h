@@ -10362,7 +10362,8 @@
                 ),
             };
         }
-        AvenCTokenSet tset = aven_c_lex(src, arena);
+        AvenArena temp_arena = *arena;
+        AvenCTokenSet tset = aven_c_lex(src, &temp_arena);
         for (uint32_t i = 1; i < tset.tokens.len; i += 1) {
             AvenCToken token = get(tset.tokens, i);
             if (token.type < AVEN_C_TOKEN_TYPE_CMT) {
@@ -10372,7 +10373,7 @@
                 continue;
             }
             AvenStr token_str = aven_c_token_str(tset, i);
-            AvenCConfig cfg = aven_c_parse_config_comment(token_str, *arena);
+            AvenCConfig cfg = aven_c_parse_config_comment(token_str, temp_arena);
             switch (cfg.type) {
                 case AVEN_C_CONFIG_TYPE_DISABLE: {
                     aven_io_writer_push(
@@ -10401,8 +10402,9 @@
             depth = AVEN_C_MAX_PARSE_DEPTH;
         }
         uint32_t max_depth = (uint32_t)min(AVEN_C_MAX_PARSE_DEPTH, depth);
-        AvenCAstResult ast_res = aven_c_ast_parse(tset, max_depth, arena);
+        AvenCAstResult ast_res = aven_c_ast_parse(tset, max_depth, &temp_arena);
         if (ast_res.type == AVEN_C_AST_RESULT_TYPE_ERROR) {
+            *arena = temp_arena;
             return (AvenCFmtResult){
                 .error = AVEN_C_FMT_ERROR_PARSE,
                 .msg = ast_res.data.error,
@@ -10411,7 +10413,7 @@
         if (column_width <= 0 or column_width > AVEN_C_MAX_COLUMN_WIDTH) {
             column_width = AVEN_C_MAX_COLUMN_WIDTH;
         }
-        AvenStr indent_str = aven_arena_create_slice(char, arena, indent);
+        AvenStr indent_str = aven_arena_create_slice(char, &temp_arena, indent);
         for (size_t i = 0; i < indent_str.len; i += 1) {
             get(indent_str, i) = ' ';
         }
@@ -10423,9 +10425,10 @@
             (uint32_t)column_width,
             newline,
             indent_str,
-            arena
+            &temp_arena
         );
         if (ren_res.error != AVEN_C_AST_RENDER_ERROR_NONE) {
+            *arena = temp_arena;
             return (AvenCFmtResult){
                 .error = ren_res.error == AVEN_C_AST_RENDER_ERROR_IO ?
                     AVEN_C_FMT_ERROR_WRITE :
