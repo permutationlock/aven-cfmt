@@ -10042,7 +10042,6 @@
                     split,
                     state
                 );
-                ctx->indent += 1;
                 aven_c_ast_render_node_try(
                     ctx,
                     node.type,
@@ -10051,7 +10050,6 @@
                     split,
                     state
                 );
-                ctx->indent -= 1;
                 aven_c_ast_render_token_try(ctx, get(tokens, 2), split, state);
                 break;
             }

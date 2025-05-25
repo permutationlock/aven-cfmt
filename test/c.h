@@ -2550,17 +2550,37 @@
                 },
             },
             {
-                .desc = aven_str("aven_c_ast_render ppd with whitespace between # and include"),
+                .desc = aven_str("aven_c_ast_render cpp extern C block"),
                 .fn = test_aven_c_ast_render,
                 .args = &(TestAvenCAstRenderArgs){
                     .src = slice_array("extern \"C\" { int printf(const char *fmt, ...); }\n"),
                     .expected = aven_str(
+                        "extern \"C\" {\n" "int printf(const char *fmt, ...);\n" "}\n"
+                    ),
+                    .line_len = 32,
+                },
+            },
+            {
+                .desc = aven_str("aven_c_ast_render conditional cpp extern C block"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array(
+                        "#ifdef __cplusplus\n"
                         "extern \"C\" {\n"
-                        "    int printf(\n"
-                        "        const char *fmt,\n"
-                        "        ...\n"
-                        "    );\n"
+                        "#endif\n"
+                        "int printf(const char *fmt, ...);\n"
+                        "#ifdef __cplusplus\n"
                         "}\n"
+                        "#endif\n"
+                    ),
+                    .expected = aven_str(
+                        "#ifdef __cplusplus\n"
+                        "    extern \"C\" {\n"
+                        "#endif\n"
+                        "int printf(const char *fmt, ...);\n"
+                        "#ifdef __cplusplus\n"
+                        "    }\n"
+                        "#endif\n"
                     ),
                     .line_len = 32,
                 },
