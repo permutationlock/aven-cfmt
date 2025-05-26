@@ -8541,23 +8541,22 @@
                 break;
             }
             case AVEN_C_AST_NODE_TYPE_PREPROCESSOR_MERGE: {
+                // we never split a line between merge operator and operands
                 aven_c_ast_render_node_try(
                     ctx,
                     node.type,
                     node.lhs,
                     false,
-                    split,
+                    false,
                     state
                 );
-                aven_c_ast_render_space_try(ctx, false, state);
-                aven_c_ast_render_token_force_try(ctx, node.token, split, state);
-                aven_c_ast_render_space_try(ctx, false, state);
+                aven_c_ast_render_token_force_try(ctx, node.token, false, state);
                 aven_c_ast_render_node_try(
                     ctx,
                     node.type,
                     node.rhs,
                     false,
-                    split,
+                    false,
                     state
                 );
                 break;
@@ -10081,6 +10080,9 @@
                         state
                     )
                 ) {
+                    return false;
+                }
+                if (!aven_c_ast_render_whitespace(ctx)) {
                     return false;
                 }
                 break;

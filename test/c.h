@@ -2320,12 +2320,23 @@
                 },
             },
             {
-                .desc = aven_str("aven_c_ast_render ## merge operator"),
+                .desc = aven_str("aven_c_ast_render ## operator"),
                 .fn = test_aven_c_ast_render,
                 .args = &(TestAvenCAstRenderArgs){
                     .src = slice_array("#define merge(x,y) x##y\n"),
-                    .expected = aven_str("#define merge(x, y) x ## y\n"),
+                    .expected = aven_str("#define merge(x, y) x##y\n"),
                     .line_len = 36,
+                },
+            },
+            {
+                .desc = aven_str("aven_c_ast_render ## operator and operands always on same line"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("#define merge(name1,name2) name1##name2\n"),
+                    .expected = aven_str(
+                        "#define merge(name1, name2) \\\n" "        name1##name2\n"
+                    ),
+                    .line_len = 40,
                 },
             },
             {
