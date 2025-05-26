@@ -189,7 +189,7 @@ My benchmarks show that `aven-cfmt` formats at ~30-40MB/sec on my Intel N100 min
 ```Shell
 $ lscpu | grep "Model name"
 Model name:                           Intel(R) N100
-$ ./build --ccflags "-O3" --ldflags "-O3"
+$ ./build --ccflags "-O3" --ldflags ""
 clang -O3 -I deps/libaven/include -I ./include -c -o build_out/aven-cfmt.o ./src/aven-cfmt.c
 clang -o build_out/aven-cfmt build_out/aven-cfmt.o
 rm build_out/aven-cfmt.o
