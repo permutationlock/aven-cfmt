@@ -8275,7 +8275,9 @@
                         true
                     )
                 ) {
-                    ctx->io_error = -1;
+                    if (ctx->io_error == 0) {
+                        ctx->io_error = -1;
+                    }
                     return false;
                 }
             }
@@ -9064,7 +9066,7 @@
                     break;
                 }
                 if (lines_written != ctx->lines_written) {
-                    if (ctx->io_error != 0) {
+                    if (ctx->io_error == 0) {
                         ctx->io_error = -1;
                     }
                     return false;
@@ -9083,7 +9085,7 @@
                     ctx->indent -= 1;
                     break;
                 }
-                if (ctx->io_error != 0) {
+                if (ctx->io_error == 0) {
                     ctx->io_error = -1;
                 }
                 return false;
