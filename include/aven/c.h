@@ -4964,6 +4964,15 @@
                                 list_push(ctx->scratch) = stat_node;
                             }
                         }
+                        {
+                            uint32_t expr_node = aven_c_ast_parse_assign_expr(
+                                ctx
+                            );
+                            if (expr_node != 0) {
+                                expr = true;
+                                list_push(ctx->scratch) = expr_node;
+                            }
+                        }
                         if (stat and !expr) {
                             aven_c_ast_restore_trap(ctx, state);
                             break;

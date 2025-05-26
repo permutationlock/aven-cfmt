@@ -2616,6 +2616,17 @@
                     .line_len = 32,
                 },
             },
+            {
+                .desc = aven_str("aven_c_ast_render postfix expr initializer array"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("ssize_t base = (size_t [3]){0, c->pos, c->len}[whence];\n"),
+                    .expected = aven_str(
+                        "ssize_t base = (size_t[3]){ 0, c->pos, c->len }[whence];\n"
+                    ),
+                    .line_len = 80,
+                },
+            },
         };
 
         AvenTestCaseSlice tcases = slice_array(tcase_data);

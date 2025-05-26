@@ -59,7 +59,7 @@ of pragma directives are not allowed.
 
 ### Character sets and white space
 
-Source files are assumed to be ascii or utf8 encoded. The source file is
+Source files are assumed to be ascii or utf8 encoded. Each source file is
 verified to be valid utf8 prior to tokenization.
 The tokenizer only allows non-ascii codepoints in comments, character
 constants, and string literals. Each utf8 codepoint is counted as one column
@@ -86,27 +86,46 @@ argument or the `// aven cfmt depth: N` control comment may be used to expand th
 
 It works for my code, but a surprisingly large portion of the repos I keep cloned on my machine are
 formattable out of the box as well. For example, `aven-cfmt --columns 0`
-will accept most Raylib and GLFW source files. The files it refuses to format
+will accept most [musl][4], [Raylib][5], and [GLFW][6] source files. The files it refuses to format
 contain either C++ code, unsupported macros (not using `do` statements, including
 terminating `;`), or extensions (MSVC
 `(__stdcall *fn)` declarators). It would be simple to modify such files
 to comply, but, of course, re-formatting code from well established projects is
 not a goal of `aven-cfmt`.
+
 ```Shell
-$ for i in ../raylib/src/*.c; do echo $i && ./build_out/aven-cfmt --columns 128 $i > /dev/null; done
-../raylib/src/raudio.c
-../raylib/src/rcore.c
-../raylib/src/rglfw.c
-../raylib/src/rmodels.c
+$ # aven-cfmt all Raylib .c files, only show errors
+$ for i in raylib/src/*.c; do echo $i && aven-cfmt --columns 128 $i > /dev/null; done
+raylib/src/raudio.c
+raylib/src/rcore.c
+raylib/src/rglfw.c
+raylib/src/rmodels.c
 error: expected punctuator '(':
 5247:9:         int n = 0; \
                 ^
-../raylib/src/rshapes.c
-../raylib/src/rtext.c
-../raylib/src/rtextures.c
-../raylib/src/utils.c
+raylib/src/rshapes.c
+raylib/src/rtext.c
+raylib/src/rtextures.c
+raylib/src/utils.c
 ```
-The Raylib header files are another story, that is where the offending macros reside.
+```Shell
+$ # count number of files in musl-1.2.5/src/stdio
+$ ls -1 musl-1.2.5/src/stdio/ | wc -l
+     118
+$ # aven-cfmt all stdio files, only show errors
+$ for i in musl-1.2.5/src/stdio/*; do \
+    echo $i && aven-cfmt $i; \
+done 2>&1 | grep "error:" -B1 -A2
+musl-1.2.5/src/stdio/vfprintf.c
+error: expected identifier:
+47:14: #define S(x) [(x)-'A']
+                    ^
+--
+musl-1.2.5/src/stdio/vfwprintf.c
+error: expected identifier:
+40:14: #define S(x) [(x)-'A']
+                    ^
+```
 
 ## Building
 
@@ -240,3 +259,6 @@ an input that takes longer than 1 second to parse and render.
 [1]: https://helix-editor.com/
 [2]: https://github.com/andrewrk/poop
 [3]: https://llvm.org/docs/LibFuzzer.html
+[4]: https://musl.libc.org/
+[5]: https://www.raylib.com/
+[6]: https://www.glfw.org/
