@@ -2320,6 +2320,26 @@
                 },
             },
             {
+                .desc = aven_str("aven_c_ast_render # operator"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("#define stringify(x) #x\n"),
+                    .expected = aven_str("#define stringify(x) #x\n"),
+                    .line_len = 36,
+                },
+            },
+            {
+                .desc = aven_str("aven_c_ast_render # operator and operand always on same line"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("#define stringify(identifier) #identifier\n"),
+                    .expected = aven_str(
+                        "#define stringify(identifier) \\\n" "        #identifier\n"
+                    ),
+                    .line_len = 40,
+                },
+            },
+            {
                 .desc = aven_str("aven_c_ast_render ## operator"),
                 .fn = test_aven_c_ast_render,
                 .args = &(TestAvenCAstRenderArgs){

@@ -8529,13 +8529,14 @@
                 break;
             }
             case AVEN_C_AST_NODE_TYPE_PREPROCESSOR_PASTE: {
-                aven_c_ast_render_token_try(ctx, node.token, split, state);
+                // we never split line between paste operator and operand
+                aven_c_ast_render_token_try(ctx, node.token, false, state);
                 aven_c_ast_render_node_try(
                     ctx,
                     node.type,
                     node.lhs,
                     false,
-                    split,
+                    false,
                     state
                 );
                 break;
