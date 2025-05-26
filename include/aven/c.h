@@ -5313,11 +5313,17 @@
             }
             case AVEN_C_PNC_PARL: {
                 aven_c_ast_inc_index(ctx);
+                AvenCAstNodeType parent_type = get(ctx->nodes, parent - 1).type;
                 uint32_t arg_list = 0;
                 {
                     uint32_t scratch_top = aven_c_ast_scratch_init(ctx);
                     for (;;) {
-                        uint32_t arg = aven_c_ast_parse_macro_argument(ctx);
+                        uint32_t arg = 0;
+                        if (parent_type == AVEN_C_AST_NODE_TYPE_IDENTIFIER) {
+                            arg = aven_c_ast_parse_macro_argument(ctx);
+                        } else {
+                            arg = aven_c_ast_parse_assign_expr(ctx);
+                        }
                         if (arg == 0) {
                             break;
                         }
@@ -7419,16 +7425,14 @@
                 exp_token_type = ppd_error.type;
                 exp_token_str = ppd_error.exp;
             }
-            AvenStr exp_type = exp_token_type == AVEN_C_TOKEN_TYPE_NUM ?
-                aven_str("constant") :
-                aven_c_token_type_str(exp_token_type);
-            Optional(AvenStr) exp_str = { 0 };
-            if (
+            AvenStr exp_str = aven_c_token_type_str(exp_token_type);
+            if (exp_token_type == AVEN_C_TOKEN_TYPE_NUM) {
+                exp_str = aven_str("constant");
+            } else if (
                 exp_token_type == AVEN_C_TOKEN_TYPE_PNC or
                 exp_token_type == AVEN_C_TOKEN_TYPE_KEY
             ) {
-                exp_str.valid = true;
-                exp_str.value = exp_token_str;
+                exp_str = aven_fmt(arena, "'{}'", aven_fmt_str(exp_token_str));
             }
             size_t back_offset = 64;
             size_t start = token_index >= back_offset ?
@@ -7466,12 +7470,16 @@
             get(arrow_str, arrow_len) = '^';
             arrow_len += 1;
             arrow_str = aven_str_head(arrow_str, arrow_len);
-            AvenStr error_str = exp_str.valid ?
+            AvenStr error_str = ctx.depth_exceeded ?
                 aven_fmt(
                     arena,
-                    "expected {} '{}':\n" "{}:{}: {}\n" "  {}",
-                    aven_fmt_str(exp_type),
-                    aven_fmt_str(exp_str.value),
+                    "parse depth of {} exceeded\n"
+                    "{}"
+                    "expected {}:\n"
+                    "{}:{}: {}\n"
+                    "  {}"
+                    ,
+                    aven_fmt_str(exp_str),
                     aven_fmt_uint(eloc.line),
                     aven_fmt_uint(eloc.col),
                     aven_fmt_str(line),
@@ -7480,23 +7488,15 @@
                 aven_fmt(
                     arena,
                     "expected {}:\n" "{}:{}: {}\n" "  {}",
-                    aven_fmt_str(exp_type),
+                    aven_fmt_str(exp_str),
                     aven_fmt_uint(eloc.line),
                     aven_fmt_uint(eloc.col),
                     aven_fmt_str(line),
                     aven_fmt_str(arrow_str)
                 );
-            AvenStr final_str = ctx.depth_exceeded ?
-                aven_fmt(
-                    arena,
-                    "parse depth of {} exceeded\n" "{}",
-                    aven_fmt_uint(ctx.max_depth),
-                    aven_fmt_str(error_str)
-                ) :
-                aven_fmt(arena, "{}", aven_fmt_str(error_str));
             return (AvenCAstResult){
                 .type = AVEN_C_AST_RESULT_TYPE_ERROR,
-                .data = { .error = final_str },
+                .data = { .error = error_str },
             };
         }
         AvenCAstNodeSlice nodes = aven_arena_create_slice(
