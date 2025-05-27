@@ -10182,11 +10182,13 @@
         AVEN_C_CONFIG_TYPE_DISABLE,
         AVEN_C_CONFIG_TYPE_COLUMNS,
         AVEN_C_CONFIG_TYPE_INDENT,
+        AVEN_C_CONFIG_TYPE_TABS,
         AVEN_C_CONFIG_TYPE_DEPTH,
     } AvenCConfigType;
 
     static const AvenStr aven_c_config_type_data[] = {
         [AVEN_C_CONFIG_TYPE_DISABLE] = aven_str_init("disable"),
+        [AVEN_C_CONFIG_TYPE_TABS] = aven_str_init("tabs"),
         [AVEN_C_CONFIG_TYPE_COLUMNS] = aven_str_init("columns"),
         [AVEN_C_CONFIG_TYPE_INDENT] = aven_str_init("indent"),
         [AVEN_C_CONFIG_TYPE_DEPTH] = aven_str_init("depth"),
@@ -10210,6 +10212,7 @@
         uint32_t columns;
         uint32_t indent;
         uint32_t depth;
+        bool tabs;
     } AvenCConfigOpt;
     typedef struct {
         AvenCConfigType type;
@@ -10276,6 +10279,12 @@
             }
             return (AvenCConfig){ 0 };
         }
+        if (type == AVEN_C_CONFIG_TYPE_TABS and i + 2 == tset.tokens.len) {
+            return (AvenCConfig){
+                .type = AVEN_C_CONFIG_TYPE_TABS,
+                .opt = { .tabs = true },
+            };
+        }
         i += 1;
         token = get(tset.tokens, i);
         if (token.type != AVEN_C_TOKEN_TYPE_PNC) {
@@ -10287,15 +10296,28 @@
         }
         i += 1;
         token = get(tset.tokens, i);
-        if (token.type != AVEN_C_TOKEN_TYPE_NUM) {
+        if (i + 2 != tset.tokens.len) {
             return (AvenCConfig){ 0 };
         }
-        if (i + 2 != tset.tokens.len) {
+        if (type == AVEN_C_CONFIG_TYPE_TABS) {
+            if (token.type != AVEN_C_TOKEN_TYPE_ID) {
+                return (AvenCConfig){ 0 };
+            }
+            str = aven_c_token_str(tset, i);
+            if (aven_str_equals(str, aven_str("true"))) {
+                return (AvenCConfig){ .type = type, .opt = { .tabs = true } };
+            }
+            if (aven_str_equals(str, aven_str("false"))) {
+                return (AvenCConfig){ .type = type, .opt = { .tabs = false } };
+            }
+            return (AvenCConfig){ 0 };
+        }
+        if (token.type != AVEN_C_TOKEN_TYPE_NUM) {
             return (AvenCConfig){ 0 };
         }
         str = aven_c_token_str(tset, i);
         AvenFmtParseIntResult ires = aven_fmt_parse_int_decimal(str);
-        if (ires.error != 0 or ires.payload < 0) {
+        if (ires.error != 0 or ires.payload < 0 or ires.payload > UINT32_MAX) {
             return (AvenCConfig){ 0 };
         }
         if (type == AVEN_C_CONFIG_TYPE_DEPTH) {
@@ -10389,6 +10411,10 @@
                         slice_as_bytes(aven_str_head(src, src.len - 1))
                     );
                     return (AvenCFmtResult){ 0 };
+                }
+                case AVEN_C_CONFIG_TYPE_TABS: {
+                    tabs = cfg.opt.tabs;
+                    break;
                 }
                 case AVEN_C_CONFIG_TYPE_COLUMNS: {
                     column_width = cfg.opt.columns;

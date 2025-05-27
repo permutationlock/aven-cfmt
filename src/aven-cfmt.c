@@ -84,6 +84,7 @@ int main(int argc, char **argv) {
         "configure:\n"
         "    comments at the top of files can configure options\n"
         "        // aven cfmt columns: 128\n"
+        "        // aven cfmt tabs: false\n"
         "        // aven cfmt indent: 8\n"
         "        // aven cfmt depth: 0\n"
         "    or disable formatting\n"
