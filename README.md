@@ -68,9 +68,7 @@ during rendering.
 The only whitespace characters that will be rendered are spaces, newlines, and tabs.
 Windows `\r\n` line endings will be parsed the same as `\n`, and the formatter
 will render all line endings as `\n`.
-Carriage return characters `\r` are illegal outside of line endings. All indents
-are rendered with space, tabs will only be
-rendered if they appear within comments or string literals.
+Carriage return characters `\r` are illegal outside of line endings.
 
 ### Parse depth
 
@@ -177,6 +175,7 @@ options:
     --stdin [false]       read from stdin (default=false)
     --in-place [false]    format src_file in-place (default=false)
     --columns N           column width, 0 for no limit (default=80)
+    --tabs [false]        use tabs for indents (default=false)
     --indent N            indent width (default=4)
     --depth N             parse depth, 0 for no limit (default=40)
     --help                show this  message
