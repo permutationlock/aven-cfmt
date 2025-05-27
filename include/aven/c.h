@@ -7473,13 +7473,8 @@
             AvenStr error_str = ctx.depth_exceeded ?
                 aven_fmt(
                     arena,
-                    "parse depth of {} exceeded\n"
-                    "{}"
-                    "expected {}:\n"
-                    "{}:{}: {}\n"
-                    "  {}"
-                    ,
-                    aven_fmt_str(exp_str),
+                    "parse depth of {} exceeded:\n" "{}:{}: {}\n" "  {}",
+                    aven_fmt_uint(ctx.max_depth),
                     aven_fmt_uint(eloc.line),
                     aven_fmt_uint(eloc.col),
                     aven_fmt_str(line),
@@ -9948,11 +9943,11 @@
                     split,
                     state
                 );
-                if (node.lhs != 0) {
+                ctx->indent += 1;
+                if (parent_type == AVEN_C_AST_NODE_TYPE_SWITCH_STATEMENT) {
                     ctx->indent += 1;
-                    if (parent_type == AVEN_C_AST_NODE_TYPE_SWITCH_STATEMENT) {
-                        ctx->indent += 1;
-                    }
+                }
+                if (node.lhs != 0) {
                     if (!split) {
                         aven_c_ast_render_restore(ctx, state);
                         return false;
@@ -9973,15 +9968,15 @@
                     if (!aven_c_ast_render_flush_line(ctx)) {
                         return false;
                     }
-                    // render pp tokens between last line and bracket w/indent
-                    if (!aven_c_ast_render_pp_nodes(ctx, get(tokens, 1), split)) {
-                        aven_c_ast_render_restore(ctx, state);
-                        return false;
-                    }
+                }
+                // render pp tokens between last line and bracket w/indent
+                if (!aven_c_ast_render_pp_nodes(ctx, get(tokens, 1), split)) {
+                    aven_c_ast_render_restore(ctx, state);
+                    return false;
+                }
+                ctx->indent -= 1;
+                if (parent_type == AVEN_C_AST_NODE_TYPE_SWITCH_STATEMENT) {
                     ctx->indent -= 1;
-                    if (parent_type == AVEN_C_AST_NODE_TYPE_SWITCH_STATEMENT) {
-                        ctx->indent -= 1;
-                    }
                 }
                 aven_c_ast_render_token_try(ctx, get(tokens, 1), split, state);
                 if (
@@ -10350,6 +10345,7 @@
         size_t column_width,
         size_t indent,
         size_t depth,
+        bool tabs,
         AvenArena *arena
     ) {
         if (get(src, src.len - 1) != 0) {
@@ -10425,9 +10421,16 @@
         if (column_width <= 0 or column_width > AVEN_C_MAX_COLUMN_WIDTH) {
             column_width = AVEN_C_MAX_COLUMN_WIDTH;
         }
-        AvenStr indent_str = aven_arena_create_slice(char, &temp_arena, indent);
-        for (size_t i = 0; i < indent_str.len; i += 1) {
-            get(indent_str, i) = ' ';
+        AvenStr indent_str = aven_str("\t");
+        if (!tabs) {
+            indent_str = (AvenStr)aven_arena_create_slice(
+                char,
+                &temp_arena,
+                indent
+            );
+            for (size_t i = 0; i < indent_str.len; i += 1) {
+                get(indent_str, i) = ' ';
+            }
         }
         AvenCAst ast = ast_res.data.ast;
         AvenStr newline = aven_str("\n");

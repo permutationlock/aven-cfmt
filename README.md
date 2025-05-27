@@ -254,7 +254,7 @@ the fuzzer can be compiled and run with
 $ ./clang_fuzz.sh
 ```
 The fuzzer runs indefinitely, halting upon encountering a crash, failed assert, sanitizer trap, or
-an input that takes longer than 1 second to parse and render.
+an input that takes longer than 2 seconds to parse and render.
 
 [1]: https://helix-editor.com/
 [2]: https://github.com/andrewrk/poop

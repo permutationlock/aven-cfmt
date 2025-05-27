@@ -17,7 +17,15 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     memcpy(src.ptr, data, size);
     get(src, size) = 0;
     AvenIoWriter writer = aven_io_writer_init_sink();
-    AvenCFmtResult fmt_res = aven_c_fmt(src, &writer, 128, 4, 40, &temp_arena);
+    AvenCFmtResult fmt_res = aven_c_fmt(
+        src,
+        &writer,
+        128,
+        4,
+        40,
+        false,
+        &temp_arena
+    );
     (void)fmt_res;
     free(mem);
     // if (fmt_res.error == AVEN_C_FMT_ERROR_PARSE) {

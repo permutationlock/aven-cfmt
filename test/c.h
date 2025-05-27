@@ -1589,6 +1589,30 @@
                 },
             },
             {
+                .desc = aven_str("aven_c_ast_render if else statement compound only comment"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array(
+                        "void bar(int n) {\n"
+                        "    if (n % 2 == 0) {\n"
+                        "        // empty\n"
+                        "    }\n"
+                        "    else { return 3 * n + 1; }\n"
+                        "}\n"
+                    ),
+                    .expected = aven_str(
+                        "void bar(int n) {\n"
+                        "    if (n % 2 == 0) {\n"
+                        "        // empty\n"
+                        "    } else {\n"
+                        "        return 3 * n + 1;\n"
+                        "    }\n"
+                        "}\n"
+                    ),
+                    .line_len = 32,
+                },
+            },
+            {
                 .desc = aven_str("aven_c_ast_render if statement short line"),
                 .fn = test_aven_c_ast_render,
                 .args = &(TestAvenCAstRenderArgs){
@@ -2624,6 +2648,24 @@
                     .expected = aven_str(
                         "ssize_t base = (size_t[3]){ 0, c->pos, c->len }[whence];\n"
                     ),
+                    .line_len = 80,
+                },
+            },
+            {
+                .desc = aven_str("aven_c_ast_render only comment in compound statement"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("void foo(void) { /* empty */ }\n"),
+                    .expected = aven_str("void foo(void) { /* empty */\n" "}\n"),
+                    .line_len = 80,
+                },
+            },
+            {
+                .desc = aven_str("aven_c_ast_render only comment in compound statement"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("void foo(void) {\n" "// empty\n" "}\n"),
+                    .expected = aven_str("void foo(void) {\n" "    // empty\n" "}\n"),
                     .line_len = 80,
                 },
             },
