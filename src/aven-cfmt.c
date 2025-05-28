@@ -42,11 +42,6 @@ static AvenArg arg_data[] = {
         .type = AVEN_ARG_TYPE_UINT,
     },
     {
-        .name = aven_str_init("--tabs"),
-        .description = aven_str_init("use tabs for indents"),
-        .type = AVEN_ARG_TYPE_BOOL,
-    },
-    {
         .name = aven_str_init("--indent"),
         .description = aven_str_init("indent width"),
         .value = { .type = AVEN_ARG_TYPE_UINT, .data = { .arg_uint = 4 } },
@@ -84,7 +79,6 @@ int main(int argc, char **argv) {
         "configure:\n"
         "    comments at the top of files can configure options\n"
         "        // aven cfmt columns: 128\n"
-        "        // aven cfmt tabs: false\n"
         "        // aven cfmt indent: 8\n"
         "        // aven cfmt depth: 0\n"
         "    or disable formatting\n"
@@ -110,7 +104,6 @@ int main(int argc, char **argv) {
     size_t column_width = (size_t)aven_arg_get_uint(args, "--columns");
     size_t indent = (size_t)aven_arg_get_uint(args, "--indent");
     size_t parse_depth = (size_t)aven_arg_get_uint(args, "--depth");
-    bool tabs = aven_arg_get_bool(args, "--tabs");
 
     Optional(AvenIoFd) in_fd = { 0 };
     Optional(AvenStr) in_file = { 0 };
@@ -207,7 +200,6 @@ int main(int argc, char **argv) {
         column_width,
         indent,
         parse_depth,
-        tabs,
         &arena
     );
     if (fmt_res.error != AVEN_C_FMT_ERROR_NONE) {
