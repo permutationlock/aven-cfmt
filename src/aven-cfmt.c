@@ -10,6 +10,7 @@
 #include <aven/fmt.h>
 #include <aven/io.h>
 #include <aven/str.h>
+#include <aven/ts.h>
 
 #include <stdlib.h>
 
@@ -55,6 +56,12 @@ static AvenArg arg_data[] = {
     },
 };
 
+#define error_text(s) "" \
+        aven_ts_esc(aven_ts_fg(AVEN_TS_RED)) \
+        "error:" \
+        aven_ts_esc(AVEN_TS_PLAIN) \
+        " " \
+        s
 int main(int argc, char **argv) {
     // a 4GB virtual memory reserve will handle pathological files up to ~40MB,
     // and normal source files up to ~400MB
@@ -109,7 +116,9 @@ int main(int argc, char **argv) {
     Optional(AvenStr) in_file = { 0 };
     if (aven_arg_has_arg(args, "")) {
         if (aven_arg_get_bool(args, "--stdin")) {
-            aven_io_perr("error: cannot specify both --stdin and src_file\n");
+            aven_io_perr(
+                error_text("cannot specify both --stdin and src_file\n")
+            );
             aven_arg_help(args, overview, usage, arg_cols);
             free(mem);
             return 1;
@@ -117,7 +126,7 @@ int main(int argc, char **argv) {
         in_file.valid = true;
         in_file.value = aven_arg_get_str(args, "");
     } else if (!aven_arg_get_bool(args, "--stdin")) {
-        aven_io_perr("error: specify a src_file to format or --stdin\n");
+        aven_io_perr("specify a src_file to format or --stdin\n");
         aven_arg_help(args, overview, usage, arg_cols);
         free(mem);
         return 1;
@@ -127,7 +136,9 @@ int main(int argc, char **argv) {
     bool in_place = aven_arg_get_bool(args, "--in-place");
     if (aven_arg_has_arg(args, "--out")) {
         if (in_place) {
-            aven_io_perr("error: cannot specify both --out and --in-place\n");
+            aven_io_perr(
+                error_text("cannot specify both --out and --in-place\n")
+            );
             aven_arg_help(args, overview, usage, arg_cols);
             free(mem);
             return 1;
@@ -137,7 +148,7 @@ int main(int argc, char **argv) {
     }
     if (in_place) {
         if (!in_file.valid) {
-            aven_io_perr("error: specify a src_file to use --in-place\n");
+            aven_io_perr(error_text("specify a src_file to use --in-place\n"));
             aven_arg_help(args, overview, usage, arg_cols);
             free(mem);
             return 1;
@@ -156,7 +167,7 @@ int main(int argc, char **argv) {
         );
         if (in_res.error != AVEN_IO_OPEN_ERROR_NONE) {
             aven_io_perrf(
-                "error: opening '{}' failed with {}\n",
+                error_text("opening '{}' failed with {}\n"),
                 aven_fmt_str(unwrap(in_file)),
                 aven_fmt_str(aven_io_open_error_str(in_res.error))
             );
@@ -176,7 +187,7 @@ int main(int argc, char **argv) {
     );
     if (rd_res.error != 0) {
         aven_io_perrf(
-            "error: reading '{}' failed with {}\n",
+            error_text("reading '{}' failed with {}\n"),
             aven_fmt_str(in_file.valid ? unwrap(in_file) : aven_str("stdin")),
             aven_fmt_str(aven_io_error_str(rd_res.error))
         );
@@ -203,7 +214,7 @@ int main(int argc, char **argv) {
         &arena
     );
     if (fmt_res.error != AVEN_C_FMT_ERROR_NONE) {
-        aven_io_perrf("error: {}\n", aven_fmt_str(fmt_res.msg));
+        aven_io_perrf(error_text("{}\n"), aven_fmt_str(fmt_res.msg));
         free(mem);
         return 1;
     }
@@ -218,7 +229,7 @@ int main(int argc, char **argv) {
         );
         if (out_res.error != AVEN_IO_OPEN_ERROR_NONE) {
             aven_io_perrf(
-                "error: opening '{}' failed with {}\n",
+                error_text("opening '{}' failed with {}\n"),
                 aven_fmt_str(unwrap(out_file)),
                 aven_fmt_str(aven_io_open_error_str(out_res.error))
             );
@@ -238,7 +249,7 @@ int main(int argc, char **argv) {
     AvenIoResult res = aven_io_writer_push(&file_writer, written);
     if (res.error != 0) {
         aven_io_perrf(
-            "error: writing '{}' failed with {}\n",
+            error_text("writing '{}' failed with {}\n"),
             aven_fmt_str(out_file.valid ? unwrap(out_file) : aven_str("stdout")),
             aven_fmt_str(aven_io_error_str(res.error))
         );
@@ -247,7 +258,7 @@ int main(int argc, char **argv) {
     }
     if (res.payload != written.len) {
         aven_io_perrf(
-            "error: could not finish writing to '{}'\n",
+            error_text("could not finish writing to '{}'\n"),
             aven_fmt_str(out_file.valid ? unwrap(out_file) : aven_str("stdout"))
         );
         free(mem);
