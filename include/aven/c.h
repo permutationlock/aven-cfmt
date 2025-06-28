@@ -7473,7 +7473,7 @@
             AvenStr error_str = ctx.depth_exceeded ?
                 aven_fmt(
                     arena,
-                    "parse depth of {} exceeded:\n" "{}:{}: {}\n" "  {}",
+                    "parse depth of {} exceeded\n" "{}:{}: {}\n" "  {}",
                     aven_fmt_uint(ctx.max_depth),
                     aven_fmt_uint(eloc.line),
                     aven_fmt_uint(eloc.col),
@@ -7482,7 +7482,7 @@
                 ) :
                 aven_fmt(
                     arena,
-                    "expected {}:\n" "{}:{}: {}\n" "  {}",
+                    "expected {}\n" "{}:{}: {}\n" "  {}",
                     aven_fmt_str(exp_str),
                     aven_fmt_uint(eloc.line),
                     aven_fmt_uint(eloc.col),

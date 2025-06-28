@@ -84,7 +84,7 @@ argument or the `// aven cfmt depth: N` control comment may be used to expand th
 
 ### Is this too restrictive?
 
-It works for my code, but a surprisingly large portion of the repos I keep cloned on my machine are
+It works for my code, and a surprisingly large portion of the repos I keep cloned on my machine are
 formattable out of the box as well. For example, `aven-cfmt --columns 0`
 will accept most [musl][4], [Raylib][5], and [GLFW][6] source files. The files it refuses to format
 contain either C++ code, unsupported macros (not using `do` statements, including
@@ -100,7 +100,7 @@ raylib/src/raudio.c
 raylib/src/rcore.c
 raylib/src/rglfw.c
 raylib/src/rmodels.c
-error: expected punctuator '(':
+error: expected punctuator '('
 5247:9:         int n = 0; \
                 ^
 raylib/src/rshapes.c
@@ -117,12 +117,12 @@ $ for i in musl-1.2.5/src/stdio/*; do \
     echo $i && aven-cfmt $i; \
 done 2>&1 | grep "error:" -B1 -A2
 musl-1.2.5/src/stdio/vfprintf.c
-error: expected identifier:
+error: expected identifier
 47:14: #define S(x) [(x)-'A']
                     ^
 --
 musl-1.2.5/src/stdio/vfwprintf.c
-error: expected identifier:
+error: expected identifier
 40:14: #define S(x) [(x)-'A']
                     ^
 ```

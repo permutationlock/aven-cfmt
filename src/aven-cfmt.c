@@ -58,9 +58,9 @@ static AvenArg arg_data[] = {
 
 #define error_text(s) "error: " s
 #define error_text_colored(s) "" \
-        aven_ts_esc(aven_ts_fg(AVEN_TS_RED)) \
+        aven_ts(aven_ts_fg(AVEN_TS_RED), AVEN_TS_BRIGHT) \
         "error:" \
-        aven_ts_esc(AVEN_TS_PLAIN) \
+        aven_ts(AVEN_TS_PLAIN) \
         " " \
         s
 #define aven_cfmt_perr(n, s) (n) ? \
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
         in_file.valid = true;
         in_file.value = aven_arg_get_str(args, "");
     } else if (!aven_arg_get_bool(args, "--stdin")) {
-        aven_io_perr("specify a src_file to format or --stdin\n");
+        aven_cfmt_perr(no_color, "specify a src_file to format or --stdin\n");
         aven_arg_help(args, overview, usage, arg_cols);
         free(mem);
         return 1;
