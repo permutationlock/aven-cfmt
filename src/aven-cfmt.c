@@ -69,6 +69,7 @@ static AvenArg arg_data[] = {
 #define aven_cfmt_perrf(n, s, ...) (n) ? \
         aven_io_perrf(error_text(s), __VA_ARGS__) : \
         aven_io_perrf(error_text_colored(s), __VA_ARGS__)
+
 int main(int argc, char **argv) {
     // a 4GB virtual memory reserve will handle pathological files up to ~40MB,
     // and normal source files up to ~400MB
