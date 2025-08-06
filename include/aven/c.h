@@ -2586,19 +2586,19 @@
             case AVEN_C_LEX_STATE_FSLASH: {
                 switch (c) {
                     case '/': {
-                        ctx->index += 1;
                         if (ctx->ppd) {
                             ctx->state = AVEN_C_LEX_STATE_DONE;
                         } else {
+                            ctx->index += 1;
                             ctx->state = AVEN_C_LEX_STATE_COMMENT;
                         }
                         break;
                     }
                     case '*': {
-                        ctx->index += 1;
                         if (ctx->ppd) {
                             ctx->state = AVEN_C_LEX_STATE_DONE;
                         } else {
+                            ctx->index += 1;
                             ctx->state = AVEN_C_LEX_STATE_MLCOMMENT;
                         }
                         break;
