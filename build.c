@@ -105,9 +105,21 @@ int main(int argc, char **argv) {
         &out_dir_step,
         &arena
     );
+    AvenBuildStep tokenize_step = aven_cfmt_ctokenize_build_step(
+        &opts,
+        libaven_include_dir,
+        (AvenBuildStepPtrOptional){
+            .valid = winutf8_obj_step.valid,
+            .value = &winutf8_obj_step.value,
+        },
+        root_dir,
+        &out_dir_step,
+        &arena
+    );
 
     AvenBuildStep root_step = aven_build_step_root();
     aven_build_step_add_dep(&root_step, &fmt_step, &arena);
+    aven_build_step_add_dep(&root_step, &tokenize_step, &arena);
 
     // Build and run tests
 

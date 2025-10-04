@@ -394,6 +394,7 @@
         [AVEN_C_TOKEN_TYPE_PPD] = aven_str_init("preprocessor-directive"),
         [AVEN_C_TOKEN_TYPE_CMT] = aven_str_init("comment"),
         [AVEN_C_TOKEN_TYPE_INV] = aven_str_init("invalid"),
+        [AVEN_C_TOKEN_TYPE_HDR] = aven_str_init("header"),
     };
 
     static const AvenStrSlice aven_c_token_type_strs = {
