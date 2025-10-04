@@ -2,7 +2,7 @@
 
 ```bash
 poop "./aven-ctokenize-loop include/aven/c.h" "./aven-ctokenize-goto include/aven/c.h"
-Benchmark 1 (762 runs): ./aven-ctokenize-old include/aven/c.h
+Benchmark 1 (762 runs): ./aven-ctokenize-loop include/aven/c.h
   measurement          mean ± σ            min … max           outliers         delta
   wall_time          6.53ms ±  828us    5.96ms … 18.0ms         58 ( 8%)        0%
   peak_rss           1.73MB ± 56.8KB    1.54MB … 1.80MB          0 ( 0%)        0%
@@ -11,7 +11,7 @@ Benchmark 1 (762 runs): ./aven-ctokenize-old include/aven/c.h
   cache_references   19.5K  ± 10.2K     5.92K  … 74.5K          23 ( 3%)        0%
   cache_misses       2.69K  ± 6.28K      862   … 49.9K          43 ( 6%)        0%
   branch_misses       144K  ± 16.9K      130K  …  273K          64 ( 8%)        0%
-Benchmark 2 (883 runs): ./aven-ctokenize-new include/aven/c.h
+Benchmark 2 (883 runs): ./aven-ctokenize-goto include/aven/c.h
   measurement          mean ± σ            min … max           outliers         delta
   wall_time          5.63ms ±  431us    5.22ms … 8.35ms         73 ( 8%)        ⚡- 13.7% ±  1.0%
   peak_rss           1.73MB ± 55.2KB    1.58MB … 1.80MB          0 ( 0%)          +  0.1% ±  0.3%
@@ -24,7 +24,7 @@ Benchmark 2 (883 runs): ./aven-ctokenize-new include/aven/c.h
 
 ```bash
 poop "./aven-cfmt-loop include/aven/c.h" "./aven-cfmt-goto include/aven/c.h"
-Benchmark 1 (502 runs): ./aven-cfmt-old include/aven/c.h
+Benchmark 1 (502 runs): ./aven-cfmt-loop include/aven/c.h
   measurement          mean ± σ            min … max           outliers         delta
   wall_time          9.92ms ±  873us    8.89ms … 16.3ms         30 ( 6%)        0%
   peak_rss           3.17MB ± 42.0KB    3.04MB … 3.25MB          4 ( 1%)        0%
@@ -33,7 +33,7 @@ Benchmark 1 (502 runs): ./aven-cfmt-old include/aven/c.h
   cache_references   70.3K  ± 15.6K     32.2K  …  127K           7 ( 1%)        0%
   cache_misses       8.38K  ± 6.83K     2.61K  … 49.5K          70 (14%)        0%
   branch_misses       199K  ± 17.7K      182K  …  306K          65 (13%)        0%
-Benchmark 2 (551 runs): ./aven-cfmt-new include/aven/c.h
+Benchmark 2 (551 runs): ./aven-cfmt-goto include/aven/c.h
   measurement          mean ± σ            min … max           outliers         delta
   wall_time          9.04ms ±  903us    8.20ms … 15.3ms         56 (10%)        ⚡-  8.8% ±  1.1%
   peak_rss           3.16MB ± 42.2KB    3.04MB … 3.22MB          0 ( 0%)          -  0.5% ±  0.2%
