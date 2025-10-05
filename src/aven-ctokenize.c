@@ -229,6 +229,17 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
+    int error = aven_io_writer_flush(&file_writer);
+    if (error != 0) {
+        aven_cfmt_perrf(
+            no_color,
+            "writing '{}' failed with {}\n",
+            aven_fmt_str(out_file.valid ? unwrap(out_file) : aven_str("stdout")),
+            aven_fmt_str(aven_io_error_str(error))
+        );
+        free(mem);
+        return 1;
+    }
     free(mem);
     return 0;
 }

@@ -204,7 +204,7 @@ If you use a (neo)vim variant, then you can format the active buffer with
 
 ## Performance
 
-My benchmarks show that `aven-cfmt` formats at ~30-40MB/sec on my Intel N100 mini pc.
+My benchmarks show that `aven-cfmt` formats at ~40MB/sec on my Intel N100 mini pc.
 ```Shell
 $ lscpu | grep "Model name"
 Model name:                           Intel(R) N100
@@ -213,33 +213,33 @@ clang -O3 -I deps/libaven/include -I ./include -c -o build_out/aven-cfmt.o ./src
 clang -o build_out/aven-cfmt build_out/aven-cfmt.o
 rm build_out/aven-cfmt.o
 $ poop "clang-format ../raylib/src/rcore.c" "astyle --style=google --stdin=../raylib/src/rcore.c" "./build_out/aven-cfmt --columns 128 ../raylib/src/rcore.c"
-Benchmark 1 (10 runs): clang-format ../raylib/src/rcore.c
+Benchmark 1 (7 runs): clang-format ../raylib/src/rcore.c
   measurement          mean ± σ            min … max           outliers         delta
-  wall_time           527ms ± 4.34ms     519ms …  531ms          0 ( 0%)        0%
-  peak_rss           94.3MB ±  154KB    94.1MB … 94.6MB          0 ( 0%)        0%
-  cpu_cycles         1.70G  ± 6.84M     1.69G  … 1.71G           0 ( 0%)        0%
-  instructions       3.88G  ± 1.02M     3.88G  … 3.88G           0 ( 0%)        0%
-  cache_references   39.9M  ±  395K     39.5M  … 40.7M           0 ( 0%)        0%
-  cache_misses       13.3M  ±  530K     12.6M  … 14.1M           0 ( 0%)        0%
-  branch_misses      7.76M  ± 30.6K     7.71M  … 7.81M           0 ( 0%)        0%
-Benchmark 2 (152 runs): astyle --style=google --stdin=../raylib/src/rcore.c
+  wall_time           759ms ± 7.84ms     747ms …  772ms          0 ( 0%)        0%
+  peak_rss           96.4MB ±  158KB    96.2MB … 96.7MB          0 ( 0%)        0%
+  cpu_cycles         2.45G  ± 7.66M     2.43G  … 2.46G           0 ( 0%)        0%
+  instructions       5.41G  ± 1.12M     5.41G  … 5.41G           0 ( 0%)        0%
+  cache_references   65.5M  ±  733K     64.5M  … 66.5M           0 ( 0%)        0%
+  cache_misses       24.0M  ±  787K     23.0M  … 24.9M           0 ( 0%)        0%
+  branch_misses      10.7M  ± 34.1K     10.6M  … 10.7M           0 ( 0%)        0%
+Benchmark 2 (149 runs): astyle --style=google --stdin=../raylib/src/rcore.c
   measurement          mean ± σ            min … max           outliers         delta
-  wall_time          33.0ms ±  626us    32.1ms … 38.5ms          6 ( 4%)        ⚡- 93.7% ±  0.1%
-  peak_rss           3.55MB ±  109KB    3.31MB … 3.79MB          0 ( 0%)        ⚡- 96.2% ±  0.1%
-  cpu_cycles          106M  ±  726K      105M  …  110M           6 ( 4%)        ⚡- 93.8% ±  0.1%
-  instructions        282M  ± 56.6K      282M  …  283M           1 ( 1%)        ⚡- 92.7% ±  0.0%
-  cache_references   31.7K  ± 6.92K     18.3K  … 61.9K           1 ( 1%)        ⚡- 99.9% ±  0.2%
-  cache_misses       7.76K  ± 2.18K     3.93K  … 19.5K           9 ( 6%)        ⚡- 99.9% ±  0.6%
-  branch_misses       515K  ± 16.9K      500K  …  665K          11 ( 7%)        ⚡- 93.4% ±  0.1%
-Benchmark 3 (1023 runs): ./build_out/aven-cfmt --columns 128 ../raylib/src/rcore.c
+  wall_time          33.6ms ±  704us    32.4ms … 38.1ms          1 ( 1%)        ⚡- 95.6% ±  0.2%
+  peak_rss           3.54MB ±  100KB    3.30MB … 3.75MB          0 ( 0%)        ⚡- 96.3% ±  0.1%
+  cpu_cycles          107M  ±  778K      105M  …  112M           2 ( 1%)        ⚡- 95.6% ±  0.1%
+  instructions        282M  ± 54.8K      282M  …  282M           1 ( 1%)        ⚡- 94.8% ±  0.0%
+  cache_references   49.0K  ± 7.86K     35.2K  … 82.4K           3 ( 2%)        ⚡- 99.9% ±  0.2%
+  cache_misses       15.1K  ± 2.65K     11.8K  … 30.3K           6 ( 4%)        ⚡- 99.9% ±  0.5%
+  branch_misses       516K  ± 16.6K      502K  …  688K           3 ( 2%)        ⚡- 95.2% ±  0.1%
+Benchmark 3 (1157 runs): ./build_out/aven-cfmt --columns 128 ../raylib/src/rcore.c
   measurement          mean ± σ            min … max           outliers         delta
-  wall_time          4.86ms ±  623us    4.31ms … 8.00ms        112 (11%)        ⚡- 99.1% ±  0.1%
-  peak_rss           1.87MB ± 59.4KB    1.72MB … 1.97MB          0 ( 0%)        ⚡- 98.0% ±  0.0%
-  cpu_cycles         12.8M  ±  225K     12.3M  … 14.5M           6 ( 1%)        ⚡- 99.2% ±  0.0%
-  instructions       31.3M  ±  212      31.3M  … 31.3M           0 ( 0%)        ⚡- 99.2% ±  0.0%
-  cache_references   9.62K  ± 4.19K     5.41K  … 61.9K          17 ( 2%)        ⚡-100.0% ±  0.1%
-  cache_misses       1.45K  ±  629      1.04K  … 16.6K          14 ( 1%)        ⚡-100.0% ±  0.2%
-  branch_misses       136K  ± 5.67K      121K  …  150K           0 ( 0%)        ⚡- 98.2% ±  0.1%
+  wall_time          4.29ms ±  416us    3.92ms … 6.62ms         95 ( 8%)        ⚡- 99.4% ±  0.1%
+  peak_rss           1.85MB ± 42.8KB    1.73MB … 1.91MB          0 ( 0%)        ⚡- 98.1% ±  0.0%
+  cpu_cycles         11.2M  ±  157K     11.0M  … 12.9M          50 ( 4%)        ⚡- 99.5% ±  0.0%
+  instructions       27.5M  ±  203      27.5M  … 27.5M         381 (33%)        ⚡- 99.5% ±  0.0%
+  cache_references   15.3K  ± 6.84K     5.58K  … 71.3K          29 ( 3%)        ⚡-100.0% ±  0.1%
+  cache_misses       1.81K  ± 1.17K      980   … 30.1K          40 ( 3%)        ⚡-100.0% ±  0.2%
+  branch_misses       118K  ± 1.29K      115K  …  124K          75 ( 6%)        ⚡- 98.9% ±  0.0%
 ```
 I compiled a release build of `astyle` from upstream source, but the `clang-format` binary was from
 my package manager.

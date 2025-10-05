@@ -3854,6 +3854,7 @@
                 uint32_t rhs = aven_c_ast_parse_identifier(ctx);
                 if (rhs == 0) {
                     aven_c_ast_error(ctx, state);
+                    return 0;
                 }
                 aven_c_ast_ascend(ctx);
                 return aven_c_ast_push(
@@ -4130,7 +4131,7 @@
         uint32_t cexpr_node = aven_c_ast_parse_const_expr(ctx);
         if (cexpr_node == 0) {
             aven_c_ast_error(ctx, state);
-            return id_node;
+            return 0;
         }
         return aven_c_ast_push(
             ctx,
@@ -4260,7 +4261,7 @@
         uint32_t cexpr_node = aven_c_ast_parse_const_expr(ctx);
         if (cexpr_node == 0) {
             aven_c_ast_error(ctx, state);
-            return decl_node;
+            return 0;
         }
         return aven_c_ast_push(
             ctx,
@@ -6628,7 +6629,7 @@
             uint32_t next = aven_c_ast_parse_assign_expr(ctx);
             if (next == 0) {
                 aven_c_ast_error(ctx, state);
-                return node;
+                return 0;
             }
             list_push(ctx->scratch) = next;
             count += 1;
