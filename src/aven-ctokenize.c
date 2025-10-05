@@ -210,12 +210,19 @@ int main(int argc, char **argv) {
         AvenCToken token = get(tset.tokens, i);
         AvenStr type_str = aven_c_token_type_str(token.type);
         AvenStr str = aven_c_token_str(tset, i);
-        AvenIoResult res = aven_io_writer_printf(
+        AvenIoResult res = aven_io_writer_push(
             &file_writer,
-            "{ .type = {}, .str = \"{}\"}\n",
-            aven_fmt_str(type_str),
-            aven_fmt_str(str)
+            slice_as_bytes(type_str)
         );
+        if (res.error == 0) {
+            res = aven_io_writer_push(&file_writer, slice_as_bytes(str));
+        }
+        // AvenIoResult res = aven_io_writer_printf(
+        //     &file_writer,
+        //     "{ .type = {}, .str = \"{}\"}\n",
+        //     aven_fmt_str(type_str),
+        //     aven_fmt_str(str)
+        // );
         if (res.error != 0) {
             aven_cfmt_perrf(
                 no_color,
