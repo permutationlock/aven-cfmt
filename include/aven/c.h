@@ -472,2886 +472,2192 @@
         return aven_c_byte_loc(tset.bytes, src_index);
     }
 
-    typedef enum {
-        AVEN_C_LEX_STATE_NONE = 0,
-        AVEN_C_LEX_STATE_DONE,
-        AVEN_C_LEX_STATE_INV,
-        AVEN_C_LEX_STATE_PREFIX_LCU,
-        AVEN_C_LEX_STATE_PREFIX_LCU8,
-        AVEN_C_LEX_STATE_PREFIX_UCLU,
-        AVEN_C_LEX_STATE_ID,
-        AVEN_C_LEX_STATE_NUM,
-        AVEN_C_LEX_STATE_NUM_EXP,
-        AVEN_C_LEX_STATE_STR,
-        AVEN_C_LEX_STATE_CHAR,
-        AVEN_C_LEX_STATE_PPD_START,
-        AVEN_C_LEX_STATE_PPD_NAME,
-        AVEN_C_LEX_STATE_PPD_BODY,
-        AVEN_C_LEX_STATE_PPD_BODY_ESC,
-        AVEN_C_LEX_STATE_PPD_BODY_ESC_CR,
-        AVEN_C_LEX_STATE_PPD_BODY_FSLASH,
-        AVEN_C_LEX_STATE_PPD_STR,
-        AVEN_C_LEX_STATE_PPD_STR_ESC,
-        AVEN_C_LEX_STATE_PPD_CHAR,
-        AVEN_C_LEX_STATE_PPD_CHAR_ESC,
-        AVEN_C_LEX_STATE_INCLUDE,
-        AVEN_C_LEX_STATE_INCLUDE_CR,
-        AVEN_C_LEX_STATE_INCLUDE_FSLASH,
-        AVEN_C_LEX_STATE_COMMENT,
-        AVEN_C_LEX_STATE_COMMENT_ESC,
-        AVEN_C_LEX_STATE_COMMENT_CR,
-        AVEN_C_LEX_STATE_MLCOMMENT,
-        AVEN_C_LEX_STATE_MLCOMMENT_CR,
-        AVEN_C_LEX_STATE_MLCOMMENT_SKIP,
-        AVEN_C_LEX_STATE_MLCOMMENT_STAR,
-        AVEN_C_LEX_STATE_STR_ESC,
-        AVEN_C_LEX_STATE_CHAR_ESC,
-        AVEN_C_LEX_STATE_HASH,
-        AVEN_C_LEX_STATE_DOT,
-        AVEN_C_LEX_STATE_DOT_DOT,
-        AVEN_C_LEX_STATE_MINUS,
-        AVEN_C_LEX_STATE_PLUS,
-        AVEN_C_LEX_STATE_AMP,
-        AVEN_C_LEX_STATE_STAR,
-        AVEN_C_LEX_STATE_EXCL,
-        AVEN_C_LEX_STATE_FSLASH,
-        AVEN_C_LEX_STATE_BSLASH,
-        AVEN_C_LEX_STATE_BSLASH_CR,
-        AVEN_C_LEX_STATE_PERCT,
-        AVEN_C_LEX_STATE_LT,
-        AVEN_C_LEX_STATE_LTLT,
-        AVEN_C_LEX_STATE_GT,
-        AVEN_C_LEX_STATE_GTGT,
-        AVEN_C_LEX_STATE_EQ,
-        AVEN_C_LEX_STATE_XOR,
-        AVEN_C_LEX_STATE_OR,
-        AVEN_C_LEX_STATE_COLON,
-    } AvenCLexState;
-
     typedef struct {
         AvenStr bytes;
         AvenCTokenList tokens;
-        AvenCLexState state;
         uint32_t token_start;
         uint32_t index;
         bool ppd;
     } AvenCLexCtx;
 
-    typedef enum {
-        AVEN_C_LEX_INCLUDE_STATE_NONE = 0,
-        AVEN_C_LEX_INCLUDE_STATE_ANGLE,
-        AVEN_C_LEX_INCLUDE_STATE_ANGLE_FSLASH,
-        AVEN_C_LEX_INCLUDE_STATE_QUOTE,
-        AVEN_C_LEX_INCLUDE_STATE_QUOTE_FSLASH,
-        AVEN_C_LEX_INCLUDE_STATE_ID,
-        AVEN_C_LEX_INCLUDE_STATE_CR,
-        AVEN_C_LEX_INCLUDE_STATE_FSLASH,
-        AVEN_C_LEX_INCLUDE_STATE_INV,
-        AVEN_C_LEX_INCLUDE_STATE_DONE,
-    } AvenCLexIncludeState;
-
     typedef struct {
         AvenStr bytes;
         AvenCTokenList tokens;
-        AvenCLexIncludeState state;
         uint32_t token_start;
         uint32_t index;
     } AvenCLexIncludeCtx;
 
     static void aven_c_lex_include_step(AvenCLexIncludeCtx *ctx) {
         char c = get(ctx->bytes, ctx->index);
-        switch (ctx->state) {
-            case AVEN_C_LEX_INCLUDE_STATE_NONE:
-            AVEN_C_LEX_INCLUDE_STATE_NONE_CASE: {
-                ctx->token_start = ctx->index;
-                switch (c) {
-                    case ' ':
-                    case '\t': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_INCLUDE_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '#': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_HSH,
-                        };
-                        goto AVEN_C_LEX_INCLUDE_STATE_NONE_CASE;
-                        break;
-                    }
-                    case 'i': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_ID;
-                        goto AVEN_C_LEX_INCLUDE_STATE_ID_CASE;
-                        break;
-                    }
-                    case '<': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_LT,
-                        };
-                        ctx->token_start = ctx->index;
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_ANGLE;
-                        goto AVEN_C_LEX_INCLUDE_STATE_ANGLE_CASE;
-                        break;
-                    }
-                    case '\"': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_QUOT,
-                        };
-                        ctx->token_start = ctx->index;
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_QUOTE;
-                        goto AVEN_C_LEX_INCLUDE_STATE_QUOTE_CASE;
-                        break;
-                    }
-                    case '/': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_FSLASH;
-                        goto AVEN_C_LEX_INCLUDE_STATE_FSLASH_CASE;
-                        break;
-                    }
-                    case '\r': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_CR;
-                        goto AVEN_C_LEX_INCLUDE_STATE_CR_CASE;
-                        break;
-                    }
-                    case 0:
-                    case '\n': {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_DONE;
-                        goto AVEN_C_LEX_INCLUDE_STATE_DONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_INV;
-                        goto AVEN_C_LEX_INCLUDE_STATE_INV_CASE;
-                        break;
-                    }
-                }
-                break;
+    AVEN_C_LEX_INCLUDE_STATE_NONE:
+        ctx->token_start = ctx->index;
+        switch (c) {
+            case ' ':
+            case '\t': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_INCLUDE_STATE_NONE;
             }
-            case AVEN_C_LEX_INCLUDE_STATE_CR:
-            AVEN_C_LEX_INCLUDE_STATE_CR_CASE: {
-                switch (c) {
-                    case '\n': {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_DONE;
-                        goto AVEN_C_LEX_INCLUDE_STATE_DONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_INV;
-                        goto AVEN_C_LEX_INCLUDE_STATE_INV_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_INCLUDE_STATE_FSLASH:
-            AVEN_C_LEX_INCLUDE_STATE_FSLASH_CASE: {
-                switch (c) {
-                    case '/':
-                    case '*': {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_DONE;
-                        goto AVEN_C_LEX_INCLUDE_STATE_DONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_INV;
-                        goto AVEN_C_LEX_INCLUDE_STATE_INV_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_INCLUDE_STATE_ID:
-            AVEN_C_LEX_INCLUDE_STATE_ID_CASE: {
-                switch (c) {
-                    case 'e':
-                    case 'd':
-                    case 'u':
-                    case 'l':
-                    case 'c':
-                    case 'n': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_INCLUDE_STATE_ID_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_ID,
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                        };
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_NONE;
-                        goto AVEN_C_LEX_INCLUDE_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_INCLUDE_STATE_ANGLE:
-            AVEN_C_LEX_INCLUDE_STATE_ANGLE_CASE: {
-                switch (c) {
-                    case ' ':
-                    case '\t': {
-                        if (ctx->index > ctx->token_start) {
-                            list_push(ctx->tokens) = (AvenCToken){
-                                .type = AVEN_C_TOKEN_TYPE_STR,
-                                .index = ctx->token_start,
-                                .end = ctx->index,
-                            };
-                        }
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->token_start = ctx->index;
-                        goto AVEN_C_LEX_INCLUDE_STATE_ANGLE_CASE;
-                        break;
-                    }
-                    case '\n':
-                    case 0: {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_INV;
-                        goto AVEN_C_LEX_INCLUDE_STATE_INV_CASE;
-                        break;
-                    }
-                    case '\r': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_INV;
-                        goto AVEN_C_LEX_INCLUDE_STATE_INV_CASE;
-                        break;
-                    }
-                    case '/': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_ANGLE_FSLASH;
-                        goto AVEN_C_LEX_INCLUDE_STATE_ANGLE_FSLASH_CASE;
-                        break;
-                    }
-                    case '>': {
-                        if (ctx->index > ctx->token_start) {
-                            list_push(ctx->tokens) = (AvenCToken){
-                                .type = AVEN_C_TOKEN_TYPE_STR,
-                                .index = ctx->token_start,
-                                .end = ctx->index,
-                            };
-                        }
-                        ctx->token_start = ctx->index;
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_GT,
-                        };
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_NONE;
-                        goto AVEN_C_LEX_INCLUDE_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_INCLUDE_STATE_ANGLE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_INCLUDE_STATE_ANGLE_FSLASH:
-            AVEN_C_LEX_INCLUDE_STATE_ANGLE_FSLASH_CASE: {
-                switch (c) {
-                    case '/':
-                    case '*': {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_INV;
-                        goto AVEN_C_LEX_INCLUDE_STATE_INV_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_ANGLE;
-                        goto AVEN_C_LEX_INCLUDE_STATE_ANGLE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_INCLUDE_STATE_QUOTE:
-            AVEN_C_LEX_INCLUDE_STATE_QUOTE_CASE: {
-                switch (c) {
-                    case ' ':
-                    case '\t': {
-                        if (ctx->index > ctx->token_start) {
-                            list_push(ctx->tokens) = (AvenCToken){
-                                .type = AVEN_C_TOKEN_TYPE_STR,
-                                .index = ctx->token_start,
-                                .end = ctx->index,
-                            };
-                        }
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->token_start = ctx->index;
-                        goto AVEN_C_LEX_INCLUDE_STATE_QUOTE_CASE;
-                        break;
-                    }
-                    case '\n':
-                    case 0: {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_INV;
-                        goto AVEN_C_LEX_INCLUDE_STATE_INV_CASE;
-                        break;
-                    }
-                    case '\r': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_INV;
-                        goto AVEN_C_LEX_INCLUDE_STATE_INV_CASE;
-                        break;
-                    }
-                    case '/': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_QUOTE_FSLASH;
-                        goto AVEN_C_LEX_INCLUDE_STATE_QUOTE_FSLASH_CASE;
-                        break;
-                    }
-                    case '\"': {
-                        if (ctx->index > ctx->token_start) {
-                            list_push(ctx->tokens) = (AvenCToken){
-                                .type = AVEN_C_TOKEN_TYPE_STR,
-                                .index = ctx->token_start,
-                                .end = ctx->index,
-                            };
-                        }
-                        ctx->token_start = ctx->index;
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_QUOT,
-                        };
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_NONE;
-                        goto AVEN_C_LEX_INCLUDE_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_INCLUDE_STATE_QUOTE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_INCLUDE_STATE_QUOTE_FSLASH:
-            AVEN_C_LEX_INCLUDE_STATE_QUOTE_FSLASH_CASE: {
-                switch (c) {
-                    case '/':
-                    case '*': {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_INV;
-                        goto AVEN_C_LEX_INCLUDE_STATE_INV_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_INCLUDE_STATE_QUOTE;
-                        goto AVEN_C_LEX_INCLUDE_STATE_QUOTE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_INCLUDE_STATE_INV:
-            AVEN_C_LEX_INCLUDE_STATE_INV_CASE: {
+            case '#': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
-                    .type = AVEN_C_TOKEN_TYPE_INV,
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_HSH,
+                };
+                goto AVEN_C_LEX_INCLUDE_STATE_NONE;
+            }
+            case 'i': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_INCLUDE_STATE_ID;
+            }
+            case '<': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_LT,
+                };
+                ctx->token_start = ctx->index;
+                goto AVEN_C_LEX_INCLUDE_STATE_ANGLE;
+            }
+            case '\"': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_QUOT,
+                };
+                ctx->token_start = ctx->index;
+                goto AVEN_C_LEX_INCLUDE_STATE_QUOTE;
+            }
+            case '/': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_INCLUDE_STATE_FSLASH;
+            }
+            case '\r': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_INCLUDE_STATE_CR;
+            }
+            case 0:
+            case '\n': {
+                goto AVEN_C_LEX_INCLUDE_STATE_DONE;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_INCLUDE_STATE_INV;
+            }
+        }
+    AVEN_C_LEX_INCLUDE_STATE_CR:
+        switch (c) {
+            case '\n': {
+                goto AVEN_C_LEX_INCLUDE_STATE_DONE;
+            }
+            default: {
+                goto AVEN_C_LEX_INCLUDE_STATE_INV;
+            }
+        }
+    AVEN_C_LEX_INCLUDE_STATE_FSLASH:
+        switch (c) {
+            case '/':
+            case '*': {
+                goto AVEN_C_LEX_INCLUDE_STATE_DONE;
+            }
+            default: {
+                goto AVEN_C_LEX_INCLUDE_STATE_INV;
+            }
+        }
+    AVEN_C_LEX_INCLUDE_STATE_ID:
+        switch (c) {
+            case 'e':
+            case 'd':
+            case 'u':
+            case 'l':
+            case 'c':
+            case 'n': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_INCLUDE_STATE_ID;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_ID,
                     .index = ctx->token_start,
                     .end = ctx->index,
                 };
-                ctx->token_start = ctx->index;
-                ctx->state = AVEN_C_LEX_INCLUDE_STATE_DONE;
-                goto AVEN_C_LEX_INCLUDE_STATE_DONE_CASE;
-                break;
-            }
-            case AVEN_C_LEX_INCLUDE_STATE_DONE:
-            AVEN_C_LEX_INCLUDE_STATE_DONE_CASE: {
-                break;
+                goto AVEN_C_LEX_INCLUDE_STATE_NONE;
             }
         }
+    AVEN_C_LEX_INCLUDE_STATE_ANGLE:
+        switch (c) {
+            case ' ':
+            case '\t': {
+                if (ctx->index > ctx->token_start) {
+                    list_push(ctx->tokens) = (AvenCToken){
+                        .type = AVEN_C_TOKEN_TYPE_STR,
+                        .index = ctx->token_start,
+                        .end = ctx->index,
+                    };
+                }
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                ctx->token_start = ctx->index;
+                goto AVEN_C_LEX_INCLUDE_STATE_ANGLE;
+            }
+            case '\n':
+            case 0: {
+                goto AVEN_C_LEX_INCLUDE_STATE_INV;
+            }
+            case '\r': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_INCLUDE_STATE_INV;
+            }
+            case '/': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_INCLUDE_STATE_ANGLE_FSLASH;
+            }
+            case '>': {
+                if (ctx->index > ctx->token_start) {
+                    list_push(ctx->tokens) = (AvenCToken){
+                        .type = AVEN_C_TOKEN_TYPE_STR,
+                        .index = ctx->token_start,
+                        .end = ctx->index,
+                    };
+                }
+                ctx->token_start = ctx->index;
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_GT,
+                };
+                goto AVEN_C_LEX_INCLUDE_STATE_NONE;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_INCLUDE_STATE_ANGLE;
+            }
+        }
+    AVEN_C_LEX_INCLUDE_STATE_ANGLE_FSLASH:
+        switch (c) {
+            case '/':
+            case '*': {
+                goto AVEN_C_LEX_INCLUDE_STATE_INV;
+            }
+            default: {
+                goto AVEN_C_LEX_INCLUDE_STATE_ANGLE;
+            }
+        }
+    AVEN_C_LEX_INCLUDE_STATE_QUOTE:
+        switch (c) {
+            case ' ':
+            case '\t': {
+                if (ctx->index > ctx->token_start) {
+                    list_push(ctx->tokens) = (AvenCToken){
+                        .type = AVEN_C_TOKEN_TYPE_STR,
+                        .index = ctx->token_start,
+                        .end = ctx->index,
+                    };
+                }
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                ctx->token_start = ctx->index;
+                goto AVEN_C_LEX_INCLUDE_STATE_QUOTE;
+            }
+            case '\n':
+            case 0: {
+                goto AVEN_C_LEX_INCLUDE_STATE_INV;
+            }
+            case '\r': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_INCLUDE_STATE_INV;
+            }
+            case '/': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_INCLUDE_STATE_QUOTE_FSLASH;
+            }
+            case '\"': {
+                if (ctx->index > ctx->token_start) {
+                    list_push(ctx->tokens) = (AvenCToken){
+                        .type = AVEN_C_TOKEN_TYPE_STR,
+                        .index = ctx->token_start,
+                        .end = ctx->index,
+                    };
+                }
+                ctx->token_start = ctx->index;
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_QUOT,
+                };
+                goto AVEN_C_LEX_INCLUDE_STATE_NONE;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_INCLUDE_STATE_QUOTE;
+            }
+        }
+    AVEN_C_LEX_INCLUDE_STATE_QUOTE_FSLASH:
+        switch (c) {
+            case '/':
+            case '*': {
+                goto AVEN_C_LEX_INCLUDE_STATE_INV;
+            }
+            default: {
+                goto AVEN_C_LEX_INCLUDE_STATE_QUOTE;
+            }
+        }
+    AVEN_C_LEX_INCLUDE_STATE_INV:
+        list_push(ctx->tokens) = (AvenCToken){
+            .type = AVEN_C_TOKEN_TYPE_INV,
+            .index = ctx->token_start,
+            .end = ctx->index,
+        };
+        ctx->token_start = ctx->index;
+        goto AVEN_C_LEX_INCLUDE_STATE_DONE;
+    AVEN_C_LEX_INCLUDE_STATE_DONE:
+        return;
     }
 
     static void aven_c_lex_step(AvenCLexCtx *ctx) {
         char c = get(ctx->bytes, ctx->index);
-        switch (ctx->state) {
-            case AVEN_C_LEX_STATE_NONE:
-            AVEN_C_LEX_STATE_NONE_CASE: {
-                ctx->token_start = ctx->index;
-                switch (c) {
-                    case '0':
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7':
-                    case '8':
-                    case '9': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_NUM;
-                        goto AVEN_C_LEX_STATE_NUM_CASE;
-                        break;
-                    }
-                    case 'u': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PREFIX_LCU;
-                        goto AVEN_C_LEX_STATE_PREFIX_LCU_CASE;
-                        break;
-                    }
-                    case 'L':
-                    case 'U': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PREFIX_UCLU;
-                        goto AVEN_C_LEX_STATE_PREFIX_UCLU_CASE;
-                        break;
-                    }
-                    case '_':
-                    case 'A':
-                    case 'B':
-                    case 'C':
-                    case 'D':
-                    case 'E':
-                    case 'F':
-                    case 'G':
-                    case 'H':
-                    case 'I':
-                    case 'J':
-                    case 'K':
-                    case 'M':
-                    case 'N':
-                    case 'O':
-                    case 'P':
-                    case 'Q':
-                    case 'R':
-                    case 'S':
-                    case 'T':
-                    case 'V':
-                    case 'W':
-                    case 'X':
-                    case 'Y':
-                    case 'Z':
-                    case 'a':
-                    case 'b':
-                    case 'c':
-                    case 'd':
-                    case 'e':
-                    case 'f':
-                    case 'g':
-                    case 'h':
-                    case 'i':
-                    case 'j':
-                    case 'k':
-                    case 'l':
-                    case 'm':
-                    case 'n':
-                    case 'o':
-                    case 'p':
-                    case 'q':
-                    case 'r':
-                    case 's':
-                    case 't':
-                    case 'v':
-                    case 'w':
-                    case 'x':
-                    case 'y':
-                    case 'z': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_ID;
-                        goto AVEN_C_LEX_STATE_ID_CASE;
-                        break;
-                    }
-                    case '\"': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_STR;
-                        goto AVEN_C_LEX_STATE_STR_CASE;
-                        break;
-                    }
-                    case '\'': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_CHAR;
-                        goto AVEN_C_LEX_STATE_CHAR_CASE;
-                        break;
-                    }
-                    case '#': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_HASH;
-                        goto AVEN_C_LEX_STATE_HASH_CASE;
-                        break;
-                    }
-                    case '.': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_DOT;
-                        goto AVEN_C_LEX_STATE_DOT_CASE;
-                        break;
-                    }
-                    case '-': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_MINUS;
-                        goto AVEN_C_LEX_STATE_MINUS_CASE;
-                        break;
-                    }
-                    case '+': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PLUS;
-                        goto AVEN_C_LEX_STATE_PLUS_CASE;
-                        break;
-                    }
-                    case '&': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_AMP;
-                        goto AVEN_C_LEX_STATE_AMP_CASE;
-                        break;
-                    }
-                    case '*': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_STAR;
-                        goto AVEN_C_LEX_STATE_STAR_CASE;
-                        break;
-                    }
-                    case '!': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_EXCL;
-                        goto AVEN_C_LEX_STATE_EXCL_CASE;
-                        break;
-                    }
-                    case '/': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_FSLASH;
-                        goto AVEN_C_LEX_STATE_FSLASH_CASE;
-                        break;
-                    }
-                    case '\\': {
-                        ctx->state = AVEN_C_LEX_STATE_BSLASH;
-                        goto AVEN_C_LEX_STATE_BSLASH_CASE;
-                        break;
-                    }
-                    case '%': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PERCT;
-                        goto AVEN_C_LEX_STATE_PERCT_CASE;
-                        break;
-                    }
-                    case '<': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_LT;
-                        goto AVEN_C_LEX_STATE_LT_CASE;
-                        break;
-                    }
-                    case '>': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_GT;
-                        goto AVEN_C_LEX_STATE_GT_CASE;
-                        break;
-                    }
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_EQ;
-                        goto AVEN_C_LEX_STATE_EQ_CASE;
-                        break;
-                    }
-                    case '^': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_XOR;
-                        goto AVEN_C_LEX_STATE_XOR_CASE;
-                        break;
-                    }
-                    case '|': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_OR;
-                        goto AVEN_C_LEX_STATE_OR_CASE;
-                        break;
-                    }
-                    case ':': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_COLON;
-                        goto AVEN_C_LEX_STATE_COLON_CASE;
-                        break;
-                    }
-                    case ';': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_SCOL,
-                        };
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '(': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_PARL,
-                        };
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case ')': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_PARR,
-                        };
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '[': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_SQBL,
-                        };
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case ']': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_SQBR,
-                        };
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '{': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_CRBL,
-                        };
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '}': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_CRBR,
-                        };
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case ',': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_COM,
-                        };
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '~': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_TLD,
-                        };
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '\?': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_QST,
-                        };
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case ' ':
-                    case '\t':
-                    case '\r': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '\n': {
-                        if (ctx->ppd) {
-                            ctx->state = AVEN_C_LEX_STATE_DONE;
-                            goto AVEN_C_LEX_STATE_DONE_CASE;
-                        } else {
-                            ctx->index += 1;
-                            c = get(ctx->bytes, ctx->index);
-                            list_back(ctx->tokens).trailing_lines += 1;
-                            goto AVEN_C_LEX_STATE_NONE_CASE;
-                        }
-                        break;
-                    }
-                    case 0: {
-                        ctx->state = AVEN_C_LEX_STATE_DONE;
-                        goto AVEN_C_LEX_STATE_DONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_INV;
-                        goto AVEN_C_LEX_STATE_INV_CASE;
-                        break;
-                    }
-                }
-                break;
+    AVEN_C_LEX_STATE_NONE:
+        ctx->token_start = ctx->index;
+        switch (c) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_NUM;
             }
-            case AVEN_C_LEX_STATE_PREFIX_LCU:
-            AVEN_C_LEX_STATE_PREFIX_LCU_CASE: {
-                switch (c) {
-                    case '\"': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_STR;
-                        goto AVEN_C_LEX_STATE_STR_CASE;
-                        break;
-                    }
-                    case '\'': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_CHAR;
-                        goto AVEN_C_LEX_STATE_CHAR_CASE;
-                        break;
-                    }
-                    case '8': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PREFIX_LCU8;
-                        goto AVEN_C_LEX_STATE_PREFIX_LCU8_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_ID;
-                        goto AVEN_C_LEX_STATE_ID_CASE;
-                        break;
-                    }
-                }
-                break;
+            case 'u': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PREFIX_LCU;
             }
-            case AVEN_C_LEX_STATE_PREFIX_LCU8:
-            AVEN_C_LEX_STATE_PREFIX_LCU8_CASE: {
-                switch (c) {
-                    case '\"': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_STR;
-                        goto AVEN_C_LEX_STATE_STR_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_ID;
-                        goto AVEN_C_LEX_STATE_ID_CASE;
-                        break;
-                    }
-                }
-                break;
+            case 'L':
+            case 'U': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PREFIX_UCLU;
             }
-            case AVEN_C_LEX_STATE_PREFIX_UCLU:
-            AVEN_C_LEX_STATE_PREFIX_UCLU_CASE: {
-                switch (c) {
-                    case '\"': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_STR;
-                        goto AVEN_C_LEX_STATE_STR_CASE;
-                        break;
-                    }
-                    case '\'': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_CHAR;
-                        goto AVEN_C_LEX_STATE_CHAR_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_ID;
-                        goto AVEN_C_LEX_STATE_ID_CASE;
-                        break;
-                    }
-                }
-                break;
+            case '_':
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'E':
+            case 'F':
+            case 'G':
+            case 'H':
+            case 'I':
+            case 'J':
+            case 'K':
+            case 'M':
+            case 'N':
+            case 'O':
+            case 'P':
+            case 'Q':
+            case 'R':
+            case 'S':
+            case 'T':
+            case 'V':
+            case 'W':
+            case 'X':
+            case 'Y':
+            case 'Z':
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+            case 'g':
+            case 'h':
+            case 'i':
+            case 'j':
+            case 'k':
+            case 'l':
+            case 'm':
+            case 'n':
+            case 'o':
+            case 'p':
+            case 'q':
+            case 'r':
+            case 's':
+            case 't':
+            case 'v':
+            case 'w':
+            case 'x':
+            case 'y':
+            case 'z': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_ID;
             }
-            case AVEN_C_LEX_STATE_INV:
-            AVEN_C_LEX_STATE_INV_CASE: {
+            case '\"': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_STR;
+            }
+            case '\'': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_CHAR;
+            }
+            case '#': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_HASH;
+            }
+            case '.': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_DOT;
+            }
+            case '-': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_MINUS;
+            }
+            case '+': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PLUS;
+            }
+            case '&': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_AMP;
+            }
+            case '*': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_STAR;
+            }
+            case '!': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_EXCL;
+            }
+            case '/': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_FSLASH;
+            }
+            case '\\': {
+                goto AVEN_C_LEX_STATE_BSLASH;
+            }
+            case '%': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PERCT;
+            }
+            case '<': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_LT;
+            }
+            case '>': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_GT;
+            }
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_EQ;
+            }
+            case '^': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_XOR;
+            }
+            case '|': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_OR;
+            }
+            case ':': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_COLON;
+            }
+            case ';': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
-                    .type = AVEN_C_TOKEN_TYPE_INV,
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
-                    .end = ctx->index,
+                    .end = AVEN_C_PNC_SCOL,
                 };
-                ctx->token_start = ctx->index;
-                ctx->state = AVEN_C_LEX_STATE_DONE;
-                goto AVEN_C_LEX_STATE_DONE_CASE;
-                break;
+                goto AVEN_C_LEX_STATE_NONE;
             }
-            case AVEN_C_LEX_STATE_DONE:
-            AVEN_C_LEX_STATE_DONE_CASE: {
-                break;
+            case '(': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_PARL,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
             }
-            case AVEN_C_LEX_STATE_ID:
-            AVEN_C_LEX_STATE_ID_CASE: {
-                switch (c) {
-                    case '0':
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7':
-                    case '8':
-                    case '9':
-                    case '_':
-                    case 'A':
-                    case 'B':
-                    case 'C':
-                    case 'D':
-                    case 'E':
-                    case 'F':
-                    case 'G':
-                    case 'H':
-                    case 'I':
-                    case 'J':
-                    case 'K':
-                    case 'L':
-                    case 'M':
-                    case 'N':
-                    case 'O':
-                    case 'P':
-                    case 'Q':
-                    case 'R':
-                    case 'S':
-                    case 'T':
-                    case 'U':
-                    case 'V':
-                    case 'W':
-                    case 'X':
-                    case 'Y':
-                    case 'Z':
-                    case 'a':
-                    case 'b':
-                    case 'c':
-                    case 'd':
-                    case 'e':
-                    case 'f':
-                    case 'g':
-                    case 'h':
-                    case 'i':
-                    case 'j':
-                    case 'k':
-                    case 'l':
-                    case 'm':
-                    case 'n':
-                    case 'o':
-                    case 'p':
-                    case 'q':
-                    case 'r':
-                    case 's':
-                    case 't':
-                    case 'u':
-                    case 'v':
-                    case 'w':
-                    case 'x':
-                    case 'y':
-                    case 'z': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_ID_CASE;
-                        break;
-                    }
-                    default: {
-                        AvenStr name = aven_str_range(
-                            ctx->bytes,
-                            ctx->token_start,
-                            ctx->index
-                        );
-                        AvenCKeyword keyword = aven_c_keyword(name);
-                        if (keyword == AVEN_C_KEYWORD_NONE) {
-                            list_push(ctx->tokens) = (AvenCToken){
-                                .index = ctx->token_start,
-                                .end = ctx->index,
-                                .type = AVEN_C_TOKEN_TYPE_ID,
-                            };
-                        } else {
-                            list_push(ctx->tokens) = (AvenCToken){
-                                .index = ctx->token_start,
-                                .end = keyword,
-                                .type = AVEN_C_TOKEN_TYPE_KEY,
-                            };
-                        }
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
+            case ')': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_PARR,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
             }
-            case AVEN_C_LEX_STATE_NUM:
-            AVEN_C_LEX_STATE_NUM_CASE: {
-                switch (c) {
-                    case '0':
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7':
-                    case '8':
-                    case '9':
-                    case '_':
-                    case '.':
-                    case 'A':
-                    case 'B':
-                    case 'C':
-                    case 'D':
-                    case 'F':
-                    case 'G':
-                    case 'H':
-                    case 'I':
-                    case 'J':
-                    case 'K':
-                    case 'L':
-                    case 'M':
-                    case 'N':
-                    case 'O':
-                    case 'Q':
-                    case 'R':
-                    case 'S':
-                    case 'T':
-                    case 'U':
-                    case 'V':
-                    case 'W':
-                    case 'X':
-                    case 'Y':
-                    case 'Z':
-                    case 'a':
-                    case 'b':
-                    case 'c':
-                    case 'd':
-                    case 'f':
-                    case 'g':
-                    case 'h':
-                    case 'i':
-                    case 'j':
-                    case 'k':
-                    case 'l':
-                    case 'm':
-                    case 'n':
-                    case 'o':
-                    case 'q':
-                    case 'r':
-                    case 's':
-                    case 't':
-                    case 'u':
-                    case 'v':
-                    case 'w':
-                    case 'x':
-                    case 'y':
-                    case 'z': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_NUM_CASE;
-                        break;
-                    }
-                    case 'E':
-                    case 'e':
-                    case 'P':
-                    case 'p': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_NUM_EXP;
-                        goto AVEN_C_LEX_STATE_NUM_EXP_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_NUM,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
+            case '[': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_SQBL,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
             }
-            case AVEN_C_LEX_STATE_NUM_EXP:
-            AVEN_C_LEX_STATE_NUM_EXP_CASE: {
-                switch (c) {
-                    case '0':
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7':
-                    case '8':
-                    case '9':
-                    case '_':
-                    case '.':
-                    case 'A':
-                    case 'B':
-                    case 'C':
-                    case 'D':
-                    case 'F':
-                    case 'G':
-                    case 'H':
-                    case 'I':
-                    case 'J':
-                    case 'K':
-                    case 'L':
-                    case 'M':
-                    case 'N':
-                    case 'O':
-                    case 'Q':
-                    case 'R':
-                    case 'S':
-                    case 'T':
-                    case 'U':
-                    case 'V':
-                    case 'W':
-                    case 'X':
-                    case 'Y':
-                    case 'Z':
-                    case 'a':
-                    case 'b':
-                    case 'c':
-                    case 'd':
-                    case 'f':
-                    case 'g':
-                    case 'h':
-                    case 'i':
-                    case 'j':
-                    case 'k':
-                    case 'l':
-                    case 'm':
-                    case 'n':
-                    case 'o':
-                    case 'q':
-                    case 'r':
-                    case 's':
-                    case 't':
-                    case 'u':
-                    case 'v':
-                    case 'w':
-                    case 'x':
-                    case 'y':
-                    case 'z': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_NUM;
-                        goto AVEN_C_LEX_STATE_NUM_CASE;
-                        break;
-                    }
-                    case 'E':
-                    case 'e':
-                    case 'P':
-                    case 'p': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_NUM_EXP_CASE;
-                        break;
-                    }
-                    case '+':
-                    case '-': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_NUM;
-                        goto AVEN_C_LEX_STATE_NUM_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_NUM,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
+            case ']': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_SQBR,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
             }
-            case AVEN_C_LEX_STATE_STR:
-            AVEN_C_LEX_STATE_STR_CASE: {
-                switch (c) {
-                    case '\\': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_STR_ESC;
-                        goto AVEN_C_LEX_STATE_STR_ESC_CASE;
-                        break;
-                    }
-                    case '\"': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_STR,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case 0:
-                    case '\r':
-                    case '\n': {
-                        ctx->state = AVEN_C_LEX_STATE_INV;
-                        goto AVEN_C_LEX_STATE_INV_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_STR_CASE;
-                        break;
-                    }
-                }
-                break;
+            case '{': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_CRBL,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
             }
-            case AVEN_C_LEX_STATE_CHAR:
-            AVEN_C_LEX_STATE_CHAR_CASE: {
-                switch (c) {
-                    case '\\': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_CHAR_ESC;
-                        goto AVEN_C_LEX_STATE_CHAR_ESC_CASE;
-                        break;
-                    }
-                    case '\'': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        uint32_t len = ctx->token_start - ctx->index;
-                        if (len <= 1) {
-                            ctx->state = AVEN_C_LEX_STATE_INV;
-                            goto AVEN_C_LEX_STATE_INV_CASE;
-                            break;
-                        }
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_CHR,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case 0:
-                    case '\n': {
-                        ctx->state = AVEN_C_LEX_STATE_INV;
-                        goto AVEN_C_LEX_STATE_INV_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_CHAR_CASE;
-                        break;
-                    }
-                }
-                break;
+            case '}': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_CRBR,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
             }
-            case AVEN_C_LEX_STATE_PPD_START:
-            AVEN_C_LEX_STATE_PPD_START_CASE: {
-                switch (c) {
-                    case '_':
-                    case 'A':
-                    case 'B':
-                    case 'C':
-                    case 'D':
-                    case 'E':
-                    case 'F':
-                    case 'G':
-                    case 'H':
-                    case 'I':
-                    case 'J':
-                    case 'K':
-                    case 'L':
-                    case 'M':
-                    case 'N':
-                    case 'O':
-                    case 'P':
-                    case 'Q':
-                    case 'R':
-                    case 'S':
-                    case 'T':
-                    case 'U':
-                    case 'V':
-                    case 'W':
-                    case 'X':
-                    case 'Y':
-                    case 'Z':
-                    case 'a':
-                    case 'b':
-                    case 'c':
-                    case 'd':
-                    case 'e':
-                    case 'f':
-                    case 'g':
-                    case 'h':
-                    case 'i':
-                    case 'j':
-                    case 'k':
-                    case 'l':
-                    case 'm':
-                    case 'n':
-                    case 'o':
-                    case 'p':
-                    case 'q':
-                    case 'r':
-                    case 's':
-                    case 't':
-                    case 'u':
-                    case 'v':
-                    case 'w':
-                    case 'x':
-                    case 'y':
-                    case 'z': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_NAME;
-                        goto AVEN_C_LEX_STATE_PPD_NAME_CASE;
-                        break;
-                    }
-                    case ' ':
-                    case '\t': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_PPD_START_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_HSH,
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
+            case ',': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_COM,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
             }
-            case AVEN_C_LEX_STATE_PPD_NAME:
-            AVEN_C_LEX_STATE_PPD_NAME_CASE: {
-                switch (c) {
-                    case '0':
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7':
-                    case '8':
-                    case '9':
-                    case '_':
-                    case 'A':
-                    case 'B':
-                    case 'C':
-                    case 'D':
-                    case 'E':
-                    case 'F':
-                    case 'G':
-                    case 'H':
-                    case 'I':
-                    case 'J':
-                    case 'K':
-                    case 'L':
-                    case 'M':
-                    case 'N':
-                    case 'O':
-                    case 'P':
-                    case 'Q':
-                    case 'R':
-                    case 'S':
-                    case 'T':
-                    case 'U':
-                    case 'V':
-                    case 'W':
-                    case 'X':
-                    case 'Y':
-                    case 'Z':
-                    case 'a':
-                    case 'b':
-                    case 'c':
-                    case 'd':
-                    case 'e':
-                    case 'f':
-                    case 'g':
-                    case 'h':
-                    case 'i':
-                    case 'j':
-                    case 'k':
-                    case 'l':
-                    case 'm':
-                    case 'n':
-                    case 'o':
-                    case 'p':
-                    case 'q':
-                    case 'r':
-                    case 's':
-                    case 't':
-                    case 'u':
-                    case 'v':
-                    case 'w':
-                    case 'x':
-                    case 'y':
-                    case 'z': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_PPD_NAME_CASE;
-                        break;
-                    }
-                    default: {
-                        size_t start = ctx->index -
-                            min(7, ctx->index - ctx->token_start);
-                        while (
-                            get(ctx->bytes, start) == ' ' or
-                            get(ctx->bytes, start) == '\t' or
-                            get(ctx->bytes, start) == '#'
-                        ) {
-                            start += 1;
-                        }
-                        AvenStr str = aven_str_range(
-                            ctx->bytes,
-                            start,
-                            ctx->index
-                        );
-                        AvenCPpdir ppdir = aven_c_ppdir(str);
-                        if (ppdir == AVEN_C_PPDIR_INCLUDE) {
-                            ctx->state = AVEN_C_LEX_STATE_INCLUDE;
-                            goto AVEN_C_LEX_STATE_INCLUDE_CASE;
-                        } else if (ppdir == AVEN_C_PPDIR_NONE) {
-                            ctx->state = AVEN_C_LEX_STATE_COMMENT;
-                            goto AVEN_C_LEX_STATE_COMMENT_CASE;
-                        } else {
-                            ctx->state = AVEN_C_LEX_STATE_PPD_BODY;
-                            goto AVEN_C_LEX_STATE_PPD_BODY_CASE;
-                        }
-                        break;
-                    }
-                }
-                break;
+            case '~': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_TLD,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
             }
-            case AVEN_C_LEX_STATE_PPD_BODY:
-            AVEN_C_LEX_STATE_PPD_BODY_CASE: {
-                switch (c) {
-                    case '\\': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_BODY_ESC;
-                        goto AVEN_C_LEX_STATE_PPD_BODY_ESC_CASE;
-                        break;
-                    }
-                    case '/': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_BODY_FSLASH;
-                        goto AVEN_C_LEX_STATE_PPD_BODY_FSLASH_CASE;
-                        break;
-                    }
-                    case '\"': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_STR;
-                        goto AVEN_C_LEX_STATE_PPD_STR_CASE;
-                        break;
-                    }
-                    case '\'': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_CHAR;
-                        goto AVEN_C_LEX_STATE_PPD_CHAR_CASE;
-                        break;
-                    }
-                    case '\n': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_PPD,
-                            .trailing_lines = 1,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case 0: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index + 1,
-                            .type = AVEN_C_TOKEN_TYPE_PPD,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_DONE;
-                        goto AVEN_C_LEX_STATE_DONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_PPD_BODY_CASE;
-                        break;
-                    }
-                }
-                break;
+            case '\?': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_QST,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
             }
-            case AVEN_C_LEX_STATE_PPD_BODY_ESC:
-            AVEN_C_LEX_STATE_PPD_BODY_ESC_CASE: {
-                switch (c) {
-                    case '\\': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_PPD_BODY_ESC_CASE;
-                        break;
-                    }
-                    case '\r': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_BODY_ESC_CR;
-                        goto AVEN_C_LEX_STATE_PPD_BODY_ESC_CR_CASE;
-                        break;
-                    }
-                    case 0: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index + 1,
-                            .type = AVEN_C_TOKEN_TYPE_PPD,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_DONE;
-                        goto AVEN_C_LEX_STATE_DONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_BODY;
-                        goto AVEN_C_LEX_STATE_PPD_BODY_CASE;
-                        break;
-                    }
-                }
-                break;
+            case ' ':
+            case '\t':
+            case '\r': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_NONE;
             }
-            case AVEN_C_LEX_STATE_PPD_BODY_ESC_CR:
-            AVEN_C_LEX_STATE_PPD_BODY_ESC_CR_CASE: {
-                switch (c) {
-                    case '\n': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_BODY;
-                        goto AVEN_C_LEX_STATE_PPD_BODY_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_PPD_BODY;
-                        goto AVEN_C_LEX_STATE_PPD_BODY_CASE;
-                        break;
-                    }
+            case '\n': {
+                if (ctx->ppd) {
+                    goto AVEN_C_LEX_STATE_DONE;
                 }
-                break;
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_back(ctx->tokens).trailing_lines += 1;
+                goto AVEN_C_LEX_STATE_NONE;
             }
-            case AVEN_C_LEX_STATE_PPD_STR:
-            AVEN_C_LEX_STATE_PPD_STR_CASE: {
-                switch (c) {
-                    case '\\': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_STR_ESC;
-                        goto AVEN_C_LEX_STATE_PPD_STR_ESC_CASE;
-                        break;
-                    }
-                    case '\"': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_BODY;
-                        goto AVEN_C_LEX_STATE_PPD_BODY_CASE;
-                        break;
-                    }
-                    case 0:
-                    case '\r':
-                    case '\n': {
-                        ctx->state = AVEN_C_LEX_STATE_INV;
-                        goto AVEN_C_LEX_STATE_INV_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_PPD_STR_CASE;
-                        break;
-                    }
-                }
-                break;
+            case 0: {
+                goto AVEN_C_LEX_STATE_DONE;
             }
-            case AVEN_C_LEX_STATE_PPD_STR_ESC:
-            AVEN_C_LEX_STATE_PPD_STR_ESC_CASE: {
-                switch (c) {
-                    case 'a':
-                    case 'b':
-                    case 'f':
-                    case 'n':
-                    case 'r':
-                    case 't':
-                    case 'v':
-                    case '\\':
-                    case '\?':
-                    case '\"':
-                    case '\'': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_STR;
-                        goto AVEN_C_LEX_STATE_PPD_STR_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_PPD_STR;
-                        goto AVEN_C_LEX_STATE_PPD_STR_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_PPD_CHAR:
-            AVEN_C_LEX_STATE_PPD_CHAR_CASE: {
-                switch (c) {
-                    case '\\': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_CHAR_ESC;
-                        goto AVEN_C_LEX_STATE_PPD_CHAR_ESC_CASE;
-                        break;
-                    }
-                    case '\'': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_BODY;
-                        goto AVEN_C_LEX_STATE_PPD_BODY_CASE;
-                        break;
-                    }
-                    case 0:
-                    case '\n': {
-                        ctx->state = AVEN_C_LEX_STATE_INV;
-                        goto AVEN_C_LEX_STATE_INV_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_PPD_CHAR_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_PPD_CHAR_ESC:
-            AVEN_C_LEX_STATE_PPD_CHAR_ESC_CASE: {
-                switch (c) {
-                    case 'a':
-                    case 'b':
-                    case 'f':
-                    case 'n':
-                    case 'r':
-                    case 't':
-                    case 'v':
-                    case '\\':
-                    case '\?':
-                    case '\"':
-                    case '\'': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_CHAR;
-                        goto AVEN_C_LEX_STATE_PPD_CHAR_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_PPD_CHAR;
-                        goto AVEN_C_LEX_STATE_PPD_CHAR_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_PPD_BODY_FSLASH:
-            AVEN_C_LEX_STATE_PPD_BODY_FSLASH_CASE: {
-                switch (c) {
-                    case '\\': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_PPD_BODY_ESC;
-                        goto AVEN_C_LEX_STATE_PPD_BODY_ESC_CASE;
-                        break;
-                    }
-                    case '/': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_PPD,
-                        };
-                        ctx->token_start = ctx->index - 2;
-                        ctx->state = AVEN_C_LEX_STATE_COMMENT;
-                        goto AVEN_C_LEX_STATE_COMMENT_CASE;
-                        break;
-                    }
-                    case '*': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_PPD,
-                        };
-                        ctx->token_start = ctx->index - 2;
-                        ctx->state = AVEN_C_LEX_STATE_MLCOMMENT;
-                        goto AVEN_C_LEX_STATE_MLCOMMENT_CASE;
-                        break;
-                    }
-                    case 0: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index + 1,
-                            .type = AVEN_C_TOKEN_TYPE_PPD,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_DONE;
-                        goto AVEN_C_LEX_STATE_DONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_PPD_BODY;
-                        goto AVEN_C_LEX_STATE_PPD_BODY_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_BSLASH:
-            AVEN_C_LEX_STATE_BSLASH_CASE: {
-                if (!ctx->ppd) {
-                    ctx->state = AVEN_C_LEX_STATE_INV;
-                    goto AVEN_C_LEX_STATE_INV_CASE;
-                    break;
-                }
-                switch (c) {
-                    case '\\': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_BSLASH_CASE;
-                        break;
-                    }
-                    case '\r': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_BSLASH_CR;
-                        goto AVEN_C_LEX_STATE_BSLASH_CR_CASE;
-                        break;
-                    }
-                    case '\n': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_back(ctx->tokens).trailing_lines += 1;
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_INV;
-                        goto AVEN_C_LEX_STATE_INV_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_BSLASH_CR:
-            AVEN_C_LEX_STATE_BSLASH_CR_CASE: {
-                switch (c) {
-                    case '\n': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_back(ctx->tokens).trailing_lines += 1;
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index - 1,
-                            .type = AVEN_C_TOKEN_TYPE_CMT,
-                        };
-                        ctx->token_start = ctx->index - 1;
-                        ctx->state = AVEN_C_LEX_STATE_INV;
-                        goto AVEN_C_LEX_STATE_INV_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_INCLUDE:
-            AVEN_C_LEX_STATE_INCLUDE_CASE: {
-                switch (c) {
-                    case '/': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_INCLUDE_FSLASH;
-                        goto AVEN_C_LEX_STATE_INCLUDE_FSLASH_CASE;
-                        break;
-                    }
-                    case '\r': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_INCLUDE_CR;
-                        goto AVEN_C_LEX_STATE_INCLUDE_CR_CASE;
-                        break;
-                    }
-                    case 0: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index + 1,
-                            .type = AVEN_C_TOKEN_TYPE_HDR,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_DONE;
-                        goto AVEN_C_LEX_STATE_DONE_CASE;
-                        break;
-                    }
-                    case '\n': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_HDR,
-                            .trailing_lines = 1,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_INCLUDE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_INCLUDE_FSLASH:
-            AVEN_C_LEX_STATE_INCLUDE_FSLASH_CASE: {
-                switch (c) {
-                    case '/': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_HDR,
-                        };
-                        ctx->token_start = ctx->index - 2;
-                        ctx->state = AVEN_C_LEX_STATE_COMMENT;
-                        goto AVEN_C_LEX_STATE_COMMENT_CASE;
-                        break;
-                    }
-                    case '*': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_HDR,
-                        };
-                        ctx->token_start = ctx->index - 2;
-                        ctx->state = AVEN_C_LEX_STATE_MLCOMMENT;
-                        goto AVEN_C_LEX_STATE_MLCOMMENT_CASE;
-                        break;
-                    }
-                    case 0: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index + 1,
-                            .type = AVEN_C_TOKEN_TYPE_HDR,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_DONE;
-                        goto AVEN_C_LEX_STATE_DONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_INCLUDE;
-                        goto AVEN_C_LEX_STATE_INCLUDE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_INCLUDE_CR:
-            AVEN_C_LEX_STATE_INCLUDE_CR_CASE: {
-                switch (c) {
-                    case '\n': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_HDR,
-                            .trailing_lines = 1,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_INV;
-                        goto AVEN_C_LEX_STATE_INV_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_COMMENT:
-            AVEN_C_LEX_STATE_COMMENT_CASE: {
-                switch (c) {
-                    case '\\': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_COMMENT_ESC;
-                        goto AVEN_C_LEX_STATE_COMMENT_ESC_CASE;
-                        break;
-                    }
-                    case '\r': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_COMMENT_CR;
-                        goto AVEN_C_LEX_STATE_COMMENT_CR_CASE;
-                        break;
-                    }
-                    case 0:
-                    case '\n': {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_CMT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_COMMENT_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_COMMENT_CR:
-            AVEN_C_LEX_STATE_COMMENT_CR_CASE: {
-                switch (c) {
-                    case '\n': {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index - 1,
-                            .type = AVEN_C_TOKEN_TYPE_CMT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index - 1,
-                            .type = AVEN_C_TOKEN_TYPE_CMT,
-                        };
-                        ctx->token_start = ctx->index - 1;
-                        ctx->state = AVEN_C_LEX_STATE_INV;
-                        goto AVEN_C_LEX_STATE_INV_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_COMMENT_ESC:
-            AVEN_C_LEX_STATE_COMMENT_ESC_CASE: {
-                switch (c) {
-                    case '\\': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_COMMENT_ESC_CASE;
-                        break;
-                    }
-                    case 0:
-                    case '\r':
-                    case '\n': {
-                        ctx->state = AVEN_C_LEX_STATE_INV;
-                        goto AVEN_C_LEX_STATE_INV_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_COMMENT;
-                        goto AVEN_C_LEX_STATE_COMMENT_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_MLCOMMENT:
-            AVEN_C_LEX_STATE_MLCOMMENT_CASE: {
-                switch (c) {
-                    case '*': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_MLCOMMENT_STAR;
-                        goto AVEN_C_LEX_STATE_MLCOMMENT_STAR_CASE;
-                        break;
-                    }
-                    case '\r': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_MLCOMMENT_CR;
-                        goto AVEN_C_LEX_STATE_MLCOMMENT_CR_CASE;
-                        break;
-                    }
-                    case '\n': {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_CMT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_MLCOMMENT_SKIP;
-                        goto AVEN_C_LEX_STATE_MLCOMMENT_SKIP_CASE;
-                        break;
-                    }
-                    case 0: {
-                        ctx->state = AVEN_C_LEX_STATE_DONE;
-                        goto AVEN_C_LEX_STATE_DONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_MLCOMMENT_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_MLCOMMENT_CR:
-            AVEN_C_LEX_STATE_MLCOMMENT_CR_CASE: {
-                switch (c) {
-                    case '\n': {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index - 1,
-                            .type = AVEN_C_TOKEN_TYPE_CMT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_MLCOMMENT_SKIP;
-                        goto AVEN_C_LEX_STATE_MLCOMMENT_SKIP_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index - 1,
-                            .type = AVEN_C_TOKEN_TYPE_CMT,
-                        };
-                        ctx->token_start = ctx->index - 1;
-                        ctx->state = AVEN_C_LEX_STATE_INV;
-                        goto AVEN_C_LEX_STATE_INV_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-
-            case AVEN_C_LEX_STATE_MLCOMMENT_SKIP:
-            AVEN_C_LEX_STATE_MLCOMMENT_SKIP_CASE: {
-                ctx->token_start = ctx->index;
-                switch (c) {
-                    case '\n': {
-                        list_back(ctx->tokens).trailing_lines += 1;
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->token_start = ctx->index;
-                        goto AVEN_C_LEX_STATE_MLCOMMENT_SKIP_CASE;
-                        break;
-                    }
-                    case ' ':
-                    case '\t':
-                    case '\r': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->token_start = ctx->index;
-                        goto AVEN_C_LEX_STATE_MLCOMMENT_SKIP_CASE;
-                        break;
-                    }
-                    case 0: {
-                        ctx->state = AVEN_C_LEX_STATE_DONE;
-                        goto AVEN_C_LEX_STATE_DONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_MLCOMMENT;
-                        goto AVEN_C_LEX_STATE_MLCOMMENT_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_MLCOMMENT_STAR:
-            AVEN_C_LEX_STATE_MLCOMMENT_STAR_CASE: {
-                switch (c) {
-                    case '/': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .index = ctx->token_start,
-                            .end = ctx->index,
-                            .type = AVEN_C_TOKEN_TYPE_CMT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '*': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        goto AVEN_C_LEX_STATE_MLCOMMENT_STAR_CASE;
-                        break;
-                    }
-                    case 0: {
-                        ctx->state = AVEN_C_LEX_STATE_DONE;
-                        goto AVEN_C_LEX_STATE_DONE_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_MLCOMMENT;
-                        goto AVEN_C_LEX_STATE_MLCOMMENT_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_STR_ESC:
-            AVEN_C_LEX_STATE_STR_ESC_CASE: {
-                switch (c) {
-                    case 'a':
-                    case 'b':
-                    case 'f':
-                    case 'n':
-                    case 'r':
-                    case 't':
-                    case 'v':
-                    case '\\':
-                    case '\?':
-                    case '\"':
-                    case '\'': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_STR;
-                        goto AVEN_C_LEX_STATE_STR_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_STR;
-                        goto AVEN_C_LEX_STATE_STR_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_CHAR_ESC:
-            AVEN_C_LEX_STATE_CHAR_ESC_CASE: {
-                switch (c) {
-                    case 'a':
-                    case 'b':
-                    case 'f':
-                    case 'n':
-                    case 'r':
-                    case 't':
-                    case 'v':
-                    case '\\':
-                    case '\?':
-                    case '\"':
-                    case '\'': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_CHAR;
-                        goto AVEN_C_LEX_STATE_CHAR_CASE;
-                        break;
-                    }
-                    default: {
-                        ctx->state = AVEN_C_LEX_STATE_CHAR;
-                        goto AVEN_C_LEX_STATE_CHAR_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_DOT:
-            AVEN_C_LEX_STATE_DOT_CASE: {
-                switch (c) {
-                    case '0':
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7':
-                    case '8':
-                    case '9': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_NUM;
-                        goto AVEN_C_LEX_STATE_NUM_CASE;
-                        break;
-                    }
-                    case '.': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_DOT_DOT;
-                        goto AVEN_C_LEX_STATE_DOT_DOT_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_DOT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_DOT_DOT:
-            AVEN_C_LEX_STATE_DOT_DOT_CASE: {
-                switch (c) {
-                    case '0':
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7':
-                    case '8':
-                    case '9': {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_DOT,
-                        };
-                        ctx->token_start = ctx->index - 1;
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_NUM;
-                        goto AVEN_C_LEX_STATE_NUM_CASE;
-                        break;
-                    }
-                    case '.': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_DOT3,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_DOT,
-                        };
-                        ctx->token_start = ctx->index - 1;
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_DOT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_HASH:
-            AVEN_C_LEX_STATE_HASH_CASE: {
-                switch (c) {
-                    case '#': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_HSH2,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        if (ctx->ppd) {
-                            list_push(ctx->tokens) = (AvenCToken){
-                                .type = AVEN_C_TOKEN_TYPE_PNC,
-                                .index = ctx->token_start,
-                                .end = AVEN_C_PNC_HSH,
-                            };
-                            ctx->state = AVEN_C_LEX_STATE_NONE;
-                            goto AVEN_C_LEX_STATE_NONE_CASE;
-                        } else {
-                            ctx->state = AVEN_C_LEX_STATE_PPD_START;
-                            goto AVEN_C_LEX_STATE_PPD_START_CASE;
-                        }
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_MINUS:
-            AVEN_C_LEX_STATE_MINUS_CASE: {
-                switch (c) {
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_MINEQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '>': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_ARW,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '-': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_MIN2,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_MIN,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_PLUS:
-            AVEN_C_LEX_STATE_PLUS_CASE: {
-                switch (c) {
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_PLSEQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '+': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_PLS2,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_PLS,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_AMP:
-            AVEN_C_LEX_STATE_AMP_CASE: {
-                switch (c) {
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_AMPEQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '&': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_AMP2,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_AMP,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_STAR:
-            AVEN_C_LEX_STATE_STAR_CASE: {
-                switch (c) {
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_STREQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_STR,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_EXCL:
-            AVEN_C_LEX_STATE_EXCL_CASE: {
-                switch (c) {
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_EXCEQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_EXC,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_FSLASH:
-            AVEN_C_LEX_STATE_FSLASH_CASE: {
-                switch (c) {
-                    case '/': {
-                        if (ctx->ppd) {
-                            ctx->state = AVEN_C_LEX_STATE_DONE;
-                            goto AVEN_C_LEX_STATE_DONE_CASE;
-                        } else {
-                            ctx->index += 1;
-                            c = get(ctx->bytes, ctx->index);
-                            ctx->state = AVEN_C_LEX_STATE_COMMENT;
-                            goto AVEN_C_LEX_STATE_COMMENT_CASE;
-                        }
-                        break;
-                    }
-                    case '*': {
-                        if (ctx->ppd) {
-                            ctx->state = AVEN_C_LEX_STATE_DONE;
-                            goto AVEN_C_LEX_STATE_DONE_CASE;
-                        } else {
-                            ctx->index += 1;
-                            c = get(ctx->bytes, ctx->index);
-                            ctx->state = AVEN_C_LEX_STATE_MLCOMMENT;
-                            goto AVEN_C_LEX_STATE_MLCOMMENT_CASE;
-                        }
-                        break;
-                    }
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_FSLEQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_FSL,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_PERCT:
-            AVEN_C_LEX_STATE_PERCT_CASE: {
-                switch (c) {
-                    case ':': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_PCTCOL,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '>': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_PCTGT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_PCTEQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_PCT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_LT:
-            AVEN_C_LEX_STATE_LT_CASE: {
-                switch (c) {
-                    case '%': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_LTPCT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case ':': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_LTCOL,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_LTEQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '<': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_LTLT;
-                        goto AVEN_C_LEX_STATE_LTLT_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_LT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_LTLT:
-            AVEN_C_LEX_STATE_LTLT_CASE: {
-                switch (c) {
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_LT2EQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_LT2,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_GT:
-            AVEN_C_LEX_STATE_GT_CASE: {
-                switch (c) {
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_GTEQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '>': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        ctx->state = AVEN_C_LEX_STATE_GTGT;
-                        goto AVEN_C_LEX_STATE_GTGT_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_GT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_GTGT:
-            AVEN_C_LEX_STATE_GTGT_CASE: {
-                switch (c) {
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_GT2EQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_GT2,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_EQ:
-            AVEN_C_LEX_STATE_EQ_CASE: {
-                switch (c) {
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_EQ2,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_EQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_XOR:
-            AVEN_C_LEX_STATE_XOR_CASE: {
-                switch (c) {
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_CAREQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_CAR,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_OR:
-            AVEN_C_LEX_STATE_OR_CASE: {
-                switch (c) {
-                    case '|': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_BAR2,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    case '=': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_BAREQ,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_BAR,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
-            }
-            case AVEN_C_LEX_STATE_COLON:
-            AVEN_C_LEX_STATE_COLON_CASE: {
-                switch (c) {
-                    case '>': {
-                        ctx->index += 1;
-                        c = get(ctx->bytes, ctx->index);
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_COLGT,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                    default: {
-                        list_push(ctx->tokens) = (AvenCToken){
-                            .type = AVEN_C_TOKEN_TYPE_PNC,
-                            .index = ctx->token_start,
-                            .end = AVEN_C_PNC_COL,
-                        };
-                        ctx->state = AVEN_C_LEX_STATE_NONE;
-                        goto AVEN_C_LEX_STATE_NONE_CASE;
-                        break;
-                    }
-                }
-                break;
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_INV;
             }
         }
+    AVEN_C_LEX_STATE_PREFIX_LCU:
+        switch (c) {
+            case '\"': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_STR;
+            }
+            case '\'': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_CHAR;
+            }
+            case '8': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PREFIX_LCU8;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_ID;
+            }
+        }
+    AVEN_C_LEX_STATE_PREFIX_LCU8:
+        switch (c) {
+            case '\"': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_STR;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_ID;
+            }
+        }
+    AVEN_C_LEX_STATE_PREFIX_UCLU:
+        switch (c) {
+            case '\"': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_STR;
+            }
+            case '\'': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_CHAR;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_ID;
+            }
+        }
+    AVEN_C_LEX_STATE_ID:
+        switch (c) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case '_':
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'E':
+            case 'F':
+            case 'G':
+            case 'H':
+            case 'I':
+            case 'J':
+            case 'K':
+            case 'L':
+            case 'M':
+            case 'N':
+            case 'O':
+            case 'P':
+            case 'Q':
+            case 'R':
+            case 'S':
+            case 'T':
+            case 'U':
+            case 'V':
+            case 'W':
+            case 'X':
+            case 'Y':
+            case 'Z':
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+            case 'g':
+            case 'h':
+            case 'i':
+            case 'j':
+            case 'k':
+            case 'l':
+            case 'm':
+            case 'n':
+            case 'o':
+            case 'p':
+            case 'q':
+            case 'r':
+            case 's':
+            case 't':
+            case 'u':
+            case 'v':
+            case 'w':
+            case 'x':
+            case 'y':
+            case 'z': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_ID;
+            }
+            default: {
+                AvenStr name = aven_str_range(
+                    ctx->bytes,
+                    ctx->token_start,
+                    ctx->index
+                );
+                AvenCKeyword keyword = aven_c_keyword(name);
+                if (keyword == AVEN_C_KEYWORD_NONE) {
+                    list_push(ctx->tokens) = (AvenCToken){
+                        .index = ctx->token_start,
+                        .end = ctx->index,
+                        .type = AVEN_C_TOKEN_TYPE_ID,
+                    };
+                } else {
+                    list_push(ctx->tokens) = (AvenCToken){
+                        .index = ctx->token_start,
+                        .end = keyword,
+                        .type = AVEN_C_TOKEN_TYPE_KEY,
+                    };
+                }
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_NUM:
+        switch (c) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case '_':
+            case '.':
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'F':
+            case 'G':
+            case 'H':
+            case 'I':
+            case 'J':
+            case 'K':
+            case 'L':
+            case 'M':
+            case 'N':
+            case 'O':
+            case 'Q':
+            case 'R':
+            case 'S':
+            case 'T':
+            case 'U':
+            case 'V':
+            case 'W':
+            case 'X':
+            case 'Y':
+            case 'Z':
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'f':
+            case 'g':
+            case 'h':
+            case 'i':
+            case 'j':
+            case 'k':
+            case 'l':
+            case 'm':
+            case 'n':
+            case 'o':
+            case 'q':
+            case 'r':
+            case 's':
+            case 't':
+            case 'u':
+            case 'v':
+            case 'w':
+            case 'x':
+            case 'y':
+            case 'z': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_NUM;
+            }
+            case 'E':
+            case 'e':
+            case 'P':
+            case 'p': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_NUM_EXP;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_NUM,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_NUM_EXP:
+        switch (c) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case '_':
+            case '.':
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'F':
+            case 'G':
+            case 'H':
+            case 'I':
+            case 'J':
+            case 'K':
+            case 'L':
+            case 'M':
+            case 'N':
+            case 'O':
+            case 'Q':
+            case 'R':
+            case 'S':
+            case 'T':
+            case 'U':
+            case 'V':
+            case 'W':
+            case 'X':
+            case 'Y':
+            case 'Z':
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'f':
+            case 'g':
+            case 'h':
+            case 'i':
+            case 'j':
+            case 'k':
+            case 'l':
+            case 'm':
+            case 'n':
+            case 'o':
+            case 'q':
+            case 'r':
+            case 's':
+            case 't':
+            case 'u':
+            case 'v':
+            case 'w':
+            case 'x':
+            case 'y':
+            case 'z': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_NUM;
+            }
+            case 'E':
+            case 'e':
+            case 'P':
+            case 'p': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_NUM_EXP;
+            }
+            case '+':
+            case '-': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_NUM;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_NUM,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_STR:
+        switch (c) {
+            case '\\': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_STR_ESC;
+            }
+            case '\"': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_STR,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case 0:
+            case '\r':
+            case '\n': {
+                goto AVEN_C_LEX_STATE_INV;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_STR;
+            }
+        }
+    AVEN_C_LEX_STATE_CHAR:
+        switch (c) {
+            case '\\': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_CHAR_ESC;
+            }
+            case '\'': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                uint32_t len = ctx->token_start - ctx->index;
+                if (len <= 1) {
+                    goto AVEN_C_LEX_STATE_INV;
+                }
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_CHR,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case 0:
+            case '\n': {
+                goto AVEN_C_LEX_STATE_INV;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_CHAR;
+            }
+        }
+    AVEN_C_LEX_STATE_PPD_START:
+        switch (c) {
+            case '_':
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'E':
+            case 'F':
+            case 'G':
+            case 'H':
+            case 'I':
+            case 'J':
+            case 'K':
+            case 'L':
+            case 'M':
+            case 'N':
+            case 'O':
+            case 'P':
+            case 'Q':
+            case 'R':
+            case 'S':
+            case 'T':
+            case 'U':
+            case 'V':
+            case 'W':
+            case 'X':
+            case 'Y':
+            case 'Z':
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+            case 'g':
+            case 'h':
+            case 'i':
+            case 'j':
+            case 'k':
+            case 'l':
+            case 'm':
+            case 'n':
+            case 'o':
+            case 'p':
+            case 'q':
+            case 'r':
+            case 's':
+            case 't':
+            case 'u':
+            case 'v':
+            case 'w':
+            case 'x':
+            case 'y':
+            case 'z': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_NAME;
+            }
+            case ' ':
+            case '\t': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_START;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_HSH,
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_PPD_NAME:
+        switch (c) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case '_':
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'E':
+            case 'F':
+            case 'G':
+            case 'H':
+            case 'I':
+            case 'J':
+            case 'K':
+            case 'L':
+            case 'M':
+            case 'N':
+            case 'O':
+            case 'P':
+            case 'Q':
+            case 'R':
+            case 'S':
+            case 'T':
+            case 'U':
+            case 'V':
+            case 'W':
+            case 'X':
+            case 'Y':
+            case 'Z':
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+            case 'g':
+            case 'h':
+            case 'i':
+            case 'j':
+            case 'k':
+            case 'l':
+            case 'm':
+            case 'n':
+            case 'o':
+            case 'p':
+            case 'q':
+            case 'r':
+            case 's':
+            case 't':
+            case 'u':
+            case 'v':
+            case 'w':
+            case 'x':
+            case 'y':
+            case 'z': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_NAME;
+            }
+            default: {
+                size_t start = ctx->index -
+                    min(7, ctx->index - ctx->token_start);
+                while (
+                    get(ctx->bytes, start) == ' ' or
+                    get(ctx->bytes, start) == '\t' or
+                    get(ctx->bytes, start) == '#'
+                ) {
+                    start += 1;
+                }
+                AvenStr str = aven_str_range(ctx->bytes, start, ctx->index);
+                AvenCPpdir ppdir = aven_c_ppdir(str);
+                if (ppdir == AVEN_C_PPDIR_INCLUDE) {
+                    goto AVEN_C_LEX_STATE_INCLUDE;
+                } else if (ppdir == AVEN_C_PPDIR_NONE) {
+                    goto AVEN_C_LEX_STATE_COMMENT;
+                }
+                goto AVEN_C_LEX_STATE_PPD_BODY;
+            }
+        }
+    AVEN_C_LEX_STATE_PPD_BODY:
+        switch (c) {
+            case '\\': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_BODY_ESC;
+            }
+            case '/': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_BODY_FSLASH;
+            }
+            case '\"': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_STR;
+            }
+            case '\'': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_CHAR;
+            }
+            case '\n': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_PPD,
+                    .trailing_lines = 1,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case 0: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index + 1,
+                    .type = AVEN_C_TOKEN_TYPE_PPD,
+                };
+                goto AVEN_C_LEX_STATE_DONE;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_BODY;
+            }
+        }
+    AVEN_C_LEX_STATE_PPD_BODY_ESC:
+        switch (c) {
+            case '\\': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_BODY_ESC;
+            }
+            case '\r': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_BODY_ESC_CR;
+            }
+            case 0: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index + 1,
+                    .type = AVEN_C_TOKEN_TYPE_PPD,
+                };
+                goto AVEN_C_LEX_STATE_DONE;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_BODY;
+            }
+        }
+    AVEN_C_LEX_STATE_PPD_BODY_ESC_CR:
+        switch (c) {
+            case '\n': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_BODY;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_PPD_BODY;
+            }
+        }
+    AVEN_C_LEX_STATE_PPD_STR:
+        switch (c) {
+            case '\\': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_STR_ESC;
+            }
+            case '\"': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_BODY;
+            }
+            case 0:
+            case '\r':
+            case '\n': {
+                goto AVEN_C_LEX_STATE_INV;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_STR;
+            }
+        }
+    AVEN_C_LEX_STATE_PPD_STR_ESC:
+        switch (c) {
+            case 'a':
+            case 'b':
+            case 'f':
+            case 'n':
+            case 'r':
+            case 't':
+            case 'v':
+            case '\\':
+            case '\?':
+            case '\"':
+            case '\'': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_STR;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_PPD_STR;
+            }
+        }
+    AVEN_C_LEX_STATE_PPD_CHAR:
+        switch (c) {
+            case '\\': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_CHAR_ESC;
+            }
+            case '\'': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_BODY;
+            }
+            case 0:
+            case '\n': {
+                goto AVEN_C_LEX_STATE_INV;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_CHAR;
+            }
+        }
+    AVEN_C_LEX_STATE_PPD_CHAR_ESC:
+        switch (c) {
+            case 'a':
+            case 'b':
+            case 'f':
+            case 'n':
+            case 'r':
+            case 't':
+            case 'v':
+            case '\\':
+            case '\?':
+            case '\"':
+            case '\'': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_CHAR;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_PPD_CHAR;
+            }
+        }
+    AVEN_C_LEX_STATE_PPD_BODY_FSLASH:
+        switch (c) {
+            case '\\': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_PPD_BODY_ESC;
+            }
+            case '/': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_PPD,
+                };
+                ctx->token_start = ctx->index - 2;
+                goto AVEN_C_LEX_STATE_COMMENT;
+            }
+            case '*': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_PPD,
+                };
+                ctx->token_start = ctx->index - 2;
+                goto AVEN_C_LEX_STATE_MLCOMMENT;
+            }
+            case 0: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index + 1,
+                    .type = AVEN_C_TOKEN_TYPE_PPD,
+                };
+                goto AVEN_C_LEX_STATE_DONE;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_PPD_BODY;
+            }
+        }
+    AVEN_C_LEX_STATE_BSLASH:
+        if (!ctx->ppd) {
+            goto AVEN_C_LEX_STATE_INV;
+        }
+        switch (c) {
+            case '\\': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_BSLASH;
+            }
+            case '\r': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_BSLASH_CR;
+            }
+            case '\n': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_back(ctx->tokens).trailing_lines += 1;
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_INV;
+            }
+        }
+    AVEN_C_LEX_STATE_BSLASH_CR:
+        switch (c) {
+            case '\n': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_back(ctx->tokens).trailing_lines += 1;
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index - 1,
+                    .type = AVEN_C_TOKEN_TYPE_CMT,
+                };
+                ctx->token_start = ctx->index - 1;
+                goto AVEN_C_LEX_STATE_INV;
+            }
+        }
+    AVEN_C_LEX_STATE_INCLUDE:
+        switch (c) {
+            case '/': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_INCLUDE_FSLASH;
+            }
+            case '\r': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_INCLUDE_CR;
+            }
+            case 0: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index + 1,
+                    .type = AVEN_C_TOKEN_TYPE_HDR,
+                };
+                goto AVEN_C_LEX_STATE_DONE;
+            }
+            case '\n': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_HDR,
+                    .trailing_lines = 1,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_INCLUDE;
+            }
+        }
+    AVEN_C_LEX_STATE_INCLUDE_FSLASH:
+        switch (c) {
+            case '/': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_HDR,
+                };
+                ctx->token_start = ctx->index - 2;
+                goto AVEN_C_LEX_STATE_COMMENT;
+            }
+            case '*': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_HDR,
+                };
+                ctx->token_start = ctx->index - 2;
+                goto AVEN_C_LEX_STATE_MLCOMMENT;
+            }
+            case 0: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index + 1,
+                    .type = AVEN_C_TOKEN_TYPE_HDR,
+                };
+                goto AVEN_C_LEX_STATE_DONE;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_INCLUDE;
+            }
+        }
+    AVEN_C_LEX_STATE_INCLUDE_CR:
+        switch (c) {
+            case '\n': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_HDR,
+                    .trailing_lines = 1,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_INV;
+            }
+        }
+    AVEN_C_LEX_STATE_COMMENT:
+        switch (c) {
+            case '\\': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_COMMENT_ESC;
+            }
+            case '\r': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_COMMENT_CR;
+            }
+            case 0:
+            case '\n': {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_CMT,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_COMMENT;
+            }
+        }
+    AVEN_C_LEX_STATE_COMMENT_CR:
+        switch (c) {
+            case '\n': {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index - 1,
+                    .type = AVEN_C_TOKEN_TYPE_CMT,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index - 1,
+                    .type = AVEN_C_TOKEN_TYPE_CMT,
+                };
+                ctx->token_start = ctx->index - 1;
+                goto AVEN_C_LEX_STATE_INV;
+            }
+        }
+    AVEN_C_LEX_STATE_COMMENT_ESC:
+        switch (c) {
+            case '\\': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_COMMENT_ESC;
+            }
+            case 0:
+            case '\r':
+            case '\n': {
+                goto AVEN_C_LEX_STATE_INV;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_COMMENT;
+            }
+        }
+    AVEN_C_LEX_STATE_MLCOMMENT:
+        switch (c) {
+            case '*': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_MLCOMMENT_STAR;
+            }
+            case '\r': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_MLCOMMENT_CR;
+            }
+            case '\n': {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_CMT,
+                };
+                goto AVEN_C_LEX_STATE_MLCOMMENT_SKIP;
+            }
+            case 0: {
+                goto AVEN_C_LEX_STATE_DONE;
+            }
+            default: {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_MLCOMMENT;
+            }
+        }
+    AVEN_C_LEX_STATE_MLCOMMENT_CR:
+        switch (c) {
+            case '\n': {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index - 1,
+                    .type = AVEN_C_TOKEN_TYPE_CMT,
+                };
+                goto AVEN_C_LEX_STATE_MLCOMMENT_SKIP;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index - 1,
+                    .type = AVEN_C_TOKEN_TYPE_CMT,
+                };
+                ctx->token_start = ctx->index - 1;
+                goto AVEN_C_LEX_STATE_INV;
+            }
+        }
+    AVEN_C_LEX_STATE_MLCOMMENT_SKIP:
+        ctx->token_start = ctx->index;
+        switch (c) {
+            case '\n': {
+                list_back(ctx->tokens).trailing_lines += 1;
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                ctx->token_start = ctx->index;
+                goto AVEN_C_LEX_STATE_MLCOMMENT_SKIP;
+            }
+            case ' ':
+            case '\t':
+            case '\r': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                ctx->token_start = ctx->index;
+                goto AVEN_C_LEX_STATE_MLCOMMENT_SKIP;
+            }
+            case 0: {
+                goto AVEN_C_LEX_STATE_DONE;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_MLCOMMENT;
+            }
+        }
+    AVEN_C_LEX_STATE_MLCOMMENT_STAR:
+        switch (c) {
+            case '/': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .index = ctx->token_start,
+                    .end = ctx->index,
+                    .type = AVEN_C_TOKEN_TYPE_CMT,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case '*': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_MLCOMMENT_STAR;
+            }
+            case 0: {
+                goto AVEN_C_LEX_STATE_DONE;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_MLCOMMENT;
+            }
+        }
+    AVEN_C_LEX_STATE_STR_ESC:
+        switch (c) {
+            case 'a':
+            case 'b':
+            case 'f':
+            case 'n':
+            case 'r':
+            case 't':
+            case 'v':
+            case '\\':
+            case '\?':
+            case '\"':
+            case '\'': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_STR;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_STR;
+            }
+        }
+    AVEN_C_LEX_STATE_CHAR_ESC:
+        switch (c) {
+            case 'a':
+            case 'b':
+            case 'f':
+            case 'n':
+            case 'r':
+            case 't':
+            case 'v':
+            case '\\':
+            case '\?':
+            case '\"':
+            case '\'': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_CHAR;
+            }
+            default: {
+                goto AVEN_C_LEX_STATE_CHAR;
+            }
+        }
+    AVEN_C_LEX_STATE_DOT:
+        switch (c) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_NUM;
+            }
+            case '.': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_DOT_DOT;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_DOT,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_DOT_DOT:
+        switch (c) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9': {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_DOT,
+                };
+                ctx->token_start = ctx->index - 1;
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_NUM;
+            }
+            case '.': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_DOT3,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_DOT,
+                };
+                ctx->token_start = ctx->index - 1;
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_DOT,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_HASH:
+        switch (c) {
+            case '#': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_HSH2,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                if (ctx->ppd) {
+                    list_push(ctx->tokens) = (AvenCToken){
+                        .type = AVEN_C_TOKEN_TYPE_PNC,
+                        .index = ctx->token_start,
+                        .end = AVEN_C_PNC_HSH,
+                    };
+                    goto AVEN_C_LEX_STATE_NONE;
+                }
+                goto AVEN_C_LEX_STATE_PPD_START;
+            }
+        }
+    AVEN_C_LEX_STATE_MINUS:
+        switch (c) {
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_MINEQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case '>': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_ARW,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case '-': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_MIN2,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_MIN,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_PLUS:
+        switch (c) {
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_PLSEQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case '+': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_PLS2,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_PLS,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_AMP:
+        switch (c) {
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_AMPEQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case '&': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_AMP2,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_AMP,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_STAR:
+        switch (c) {
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_STREQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_STR,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_EXCL:
+        switch (c) {
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_EXCEQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_EXC,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_FSLASH:
+        switch (c) {
+            case '/': {
+                if (ctx->ppd) {
+                    goto AVEN_C_LEX_STATE_DONE;
+                }
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_COMMENT;
+            }
+            case '*': {
+                if (ctx->ppd) {
+                    goto AVEN_C_LEX_STATE_DONE;
+                }
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_MLCOMMENT;
+            }
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_FSLEQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_FSL,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_PERCT:
+        switch (c) {
+            case ':': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_PCTCOL,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case '>': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_PCTGT,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_PCTEQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_PCT,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_LT:
+        switch (c) {
+            case '%': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_LTPCT,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case ':': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_LTCOL,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_LTEQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case '<': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_LTLT;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_LT,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_LTLT:
+        switch (c) {
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_LT2EQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_LT2,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_GT:
+        switch (c) {
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_GTEQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case '>': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                goto AVEN_C_LEX_STATE_GTGT;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_GT,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_GTGT:
+        switch (c) {
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_GT2EQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_GT2,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_EQ:
+        switch (c) {
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_EQ2,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_EQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_XOR:
+        switch (c) {
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_CAREQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_CAR,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_OR:
+        switch (c) {
+            case '|': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_BAR2,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            case '=': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_BAREQ,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_BAR,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_COLON:
+        switch (c) {
+            case '>': {
+                ctx->index += 1;
+                c = get(ctx->bytes, ctx->index);
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_COLGT,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+            default: {
+                list_push(ctx->tokens) = (AvenCToken){
+                    .type = AVEN_C_TOKEN_TYPE_PNC,
+                    .index = ctx->token_start,
+                    .end = AVEN_C_PNC_COL,
+                };
+                goto AVEN_C_LEX_STATE_NONE;
+            }
+        }
+    AVEN_C_LEX_STATE_INV:
+        list_push(ctx->tokens) = (AvenCToken){
+            .type = AVEN_C_TOKEN_TYPE_INV,
+            .index = ctx->token_start,
+            .end = ctx->index,
+        };
+        ctx->token_start = ctx->index;
+        goto AVEN_C_LEX_STATE_DONE;
+    AVEN_C_LEX_STATE_DONE:
+        return;
     }
 
     static AvenCTokenSet aven_c_lex(AvenStr bytes, AvenArena *arena) {

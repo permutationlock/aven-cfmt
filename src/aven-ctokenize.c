@@ -215,14 +215,20 @@ int main(int argc, char **argv) {
             slice_as_bytes(type_str)
         );
         if (res.error == 0) {
+            res = aven_io_writer_push(
+                &file_writer,
+                slice_as_bytes(aven_str(", "))
+            );
+        }
+        if (res.error == 0) {
             res = aven_io_writer_push(&file_writer, slice_as_bytes(str));
         }
-        // AvenIoResult res = aven_io_writer_printf(
-        //     &file_writer,
-        //     "{ .type = {}, .str = \"{}\"}\n",
-        //     aven_fmt_str(type_str),
-        //     aven_fmt_str(str)
-        // );
+        if (res.error == 0) {
+            res = aven_io_writer_push(
+                &file_writer,
+                slice_as_bytes(aven_str("\n"))
+            );
+        }
         if (res.error != 0) {
             aven_cfmt_perrf(
                 no_color,
