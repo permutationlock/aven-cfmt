@@ -488,19 +488,16 @@
     } AvenCLexIncludeCtx;
 
     static void aven_c_lex_include_step(AvenCLexIncludeCtx *ctx) {
-        char c = get(ctx->bytes, ctx->index);
     AVEN_C_LEX_INCLUDE_STATE_NONE:
         ctx->token_start = ctx->index;
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case ' ':
             case '\t': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_INCLUDE_STATE_NONE;
             }
             case '#': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -510,12 +507,10 @@
             }
             case 'i': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_INCLUDE_STATE_ID;
             }
             case '<': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -526,7 +521,6 @@
             }
             case '\"': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -537,12 +531,10 @@
             }
             case '/': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_INCLUDE_STATE_FSLASH;
             }
             case '\r': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_INCLUDE_STATE_CR;
             }
             case 0:
@@ -551,12 +543,11 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_INCLUDE_STATE_INV;
             }
         }
     AVEN_C_LEX_INCLUDE_STATE_CR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\n': {
                 goto AVEN_C_LEX_INCLUDE_STATE_DONE;
             }
@@ -565,7 +556,7 @@
             }
         }
     AVEN_C_LEX_INCLUDE_STATE_FSLASH:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '/':
             case '*': {
                 goto AVEN_C_LEX_INCLUDE_STATE_DONE;
@@ -575,7 +566,7 @@
             }
         }
     AVEN_C_LEX_INCLUDE_STATE_ID:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case 'e':
             case 'd':
             case 'u':
@@ -583,7 +574,6 @@
             case 'c':
             case 'n': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_INCLUDE_STATE_ID;
             }
             default: {
@@ -596,7 +586,7 @@
             }
         }
     AVEN_C_LEX_INCLUDE_STATE_ANGLE:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case ' ':
             case '\t': {
                 if (ctx->index > ctx->token_start) {
@@ -607,7 +597,6 @@
                     };
                 }
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 ctx->token_start = ctx->index;
                 goto AVEN_C_LEX_INCLUDE_STATE_ANGLE;
             }
@@ -617,12 +606,10 @@
             }
             case '\r': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_INCLUDE_STATE_INV;
             }
             case '/': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_INCLUDE_STATE_ANGLE_FSLASH;
             }
             case '>': {
@@ -635,7 +622,6 @@
                 }
                 ctx->token_start = ctx->index;
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -645,12 +631,11 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_INCLUDE_STATE_ANGLE;
             }
         }
     AVEN_C_LEX_INCLUDE_STATE_ANGLE_FSLASH:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '/':
             case '*': {
                 goto AVEN_C_LEX_INCLUDE_STATE_INV;
@@ -660,7 +645,7 @@
             }
         }
     AVEN_C_LEX_INCLUDE_STATE_QUOTE:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case ' ':
             case '\t': {
                 if (ctx->index > ctx->token_start) {
@@ -671,7 +656,6 @@
                     };
                 }
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 ctx->token_start = ctx->index;
                 goto AVEN_C_LEX_INCLUDE_STATE_QUOTE;
             }
@@ -681,12 +665,10 @@
             }
             case '\r': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_INCLUDE_STATE_INV;
             }
             case '/': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_INCLUDE_STATE_QUOTE_FSLASH;
             }
             case '\"': {
@@ -699,7 +681,6 @@
                 }
                 ctx->token_start = ctx->index;
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -709,12 +690,11 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_INCLUDE_STATE_QUOTE;
             }
         }
     AVEN_C_LEX_INCLUDE_STATE_QUOTE_FSLASH:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '/':
             case '*': {
                 goto AVEN_C_LEX_INCLUDE_STATE_INV;
@@ -736,10 +716,9 @@
     }
 
     static void aven_c_lex_step(AvenCLexCtx *ctx) {
-        char c = get(ctx->bytes, ctx->index);
     AVEN_C_LEX_STATE_NONE:
         ctx->token_start = ctx->index;
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '0':
             case '1':
             case '2':
@@ -751,18 +730,15 @@
             case '8':
             case '9': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_NUM;
             }
             case 'u': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PREFIX_LCU;
             }
             case 'L':
             case 'U': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PREFIX_UCLU;
             }
             case '_':
@@ -816,57 +792,46 @@
             case 'y':
             case 'z': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_ID;
             }
             case '\"': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_STR;
             }
             case '\'': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_CHAR;
             }
             case '#': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_HASH;
             }
             case '.': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_DOT;
             }
             case '-': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_MINUS;
             }
             case '+': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PLUS;
             }
             case '&': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_AMP;
             }
             case '*': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_STAR;
             }
             case '!': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_EXCL;
             }
             case '/': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_FSLASH;
             }
             case '\\': {
@@ -874,42 +839,34 @@
             }
             case '%': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PERCT;
             }
             case '<': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_LT;
             }
             case '>': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_GT;
             }
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_EQ;
             }
             case '^': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_XOR;
             }
             case '|': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_OR;
             }
             case ':': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_COLON;
             }
             case ';': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -919,7 +876,6 @@
             }
             case '(': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -929,7 +885,6 @@
             }
             case ')': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -939,7 +894,6 @@
             }
             case '[': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -949,7 +903,6 @@
             }
             case ']': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -959,7 +912,6 @@
             }
             case '{': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -969,7 +921,6 @@
             }
             case '}': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -979,7 +930,6 @@
             }
             case ',': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -989,7 +939,6 @@
             }
             case '~': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -999,7 +948,6 @@
             }
             case '\?': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -1011,7 +959,6 @@
             case '\t':
             case '\r': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_NONE;
             }
             case '\n': {
@@ -1019,7 +966,6 @@
                     goto AVEN_C_LEX_STATE_DONE;
                 }
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_back(ctx->tokens).trailing_lines += 1;
                 goto AVEN_C_LEX_STATE_NONE;
             }
@@ -1028,25 +974,21 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_INV;
             }
         }
     AVEN_C_LEX_STATE_PREFIX_LCU:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\"': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_STR;
             }
             case '\'': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_CHAR;
             }
             case '8': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PREFIX_LCU8;
             }
             default: {
@@ -1054,10 +996,9 @@
             }
         }
     AVEN_C_LEX_STATE_PREFIX_LCU8:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\"': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_STR;
             }
             default: {
@@ -1065,15 +1006,13 @@
             }
         }
     AVEN_C_LEX_STATE_PREFIX_UCLU:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\"': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_STR;
             }
             case '\'': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_CHAR;
             }
             default: {
@@ -1081,7 +1020,7 @@
             }
         }
     AVEN_C_LEX_STATE_ID:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '0':
             case '1':
             case '2':
@@ -1146,7 +1085,6 @@
             case 'y':
             case 'z': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_ID;
             }
             default: {
@@ -1173,7 +1111,7 @@
             }
         }
     AVEN_C_LEX_STATE_NUM:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '0':
             case '1':
             case '2':
@@ -1235,7 +1173,6 @@
             case 'y':
             case 'z': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_NUM;
             }
             case 'E':
@@ -1243,7 +1180,6 @@
             case 'P':
             case 'p': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_NUM_EXP;
             }
             default: {
@@ -1256,7 +1192,7 @@
             }
         }
     AVEN_C_LEX_STATE_NUM_EXP:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '0':
             case '1':
             case '2':
@@ -1318,7 +1254,6 @@
             case 'y':
             case 'z': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_NUM;
             }
             case 'E':
@@ -1326,13 +1261,11 @@
             case 'P':
             case 'p': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_NUM_EXP;
             }
             case '+':
             case '-': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_NUM;
             }
             default: {
@@ -1345,15 +1278,13 @@
             }
         }
     AVEN_C_LEX_STATE_STR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\\': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_STR_ESC;
             }
             case '\"': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .index = ctx->token_start,
                     .end = ctx->index,
@@ -1368,20 +1299,17 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_STR;
             }
         }
     AVEN_C_LEX_STATE_CHAR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\\': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_CHAR_ESC;
             }
             case '\'': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 uint32_t len = ctx->token_start - ctx->index;
                 if (len <= 1) {
                     goto AVEN_C_LEX_STATE_INV;
@@ -1399,12 +1327,11 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_CHAR;
             }
         }
     AVEN_C_LEX_STATE_PPD_START:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '_':
             case 'A':
             case 'B':
@@ -1459,13 +1386,11 @@
             case 'y':
             case 'z': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_NAME;
             }
             case ' ':
             case '\t': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_START;
             }
             default: {
@@ -1478,7 +1403,7 @@
             }
         }
     AVEN_C_LEX_STATE_PPD_NAME:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '0':
             case '1':
             case '2':
@@ -1543,7 +1468,6 @@
             case 'y':
             case 'z': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_NAME;
             }
             default: {
@@ -1567,30 +1491,25 @@
             }
         }
     AVEN_C_LEX_STATE_PPD_BODY:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\\': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_BODY_ESC;
             }
             case '/': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_BODY_FSLASH;
             }
             case '\"': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_STR;
             }
             case '\'': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_CHAR;
             }
             case '\n': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .index = ctx->token_start,
                     .end = ctx->index,
@@ -1609,20 +1528,17 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_BODY;
             }
         }
     AVEN_C_LEX_STATE_PPD_BODY_ESC:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\\': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_BODY_ESC;
             }
             case '\r': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_BODY_ESC_CR;
             }
             case 0: {
@@ -1635,15 +1551,13 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_BODY;
             }
         }
     AVEN_C_LEX_STATE_PPD_BODY_ESC_CR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\n': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_BODY;
             }
             default: {
@@ -1651,15 +1565,13 @@
             }
         }
     AVEN_C_LEX_STATE_PPD_STR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\\': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_STR_ESC;
             }
             case '\"': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_BODY;
             }
             case 0:
@@ -1669,12 +1581,11 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_STR;
             }
         }
     AVEN_C_LEX_STATE_PPD_STR_ESC:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case 'a':
             case 'b':
             case 'f':
@@ -1687,7 +1598,6 @@
             case '\"':
             case '\'': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_STR;
             }
             default: {
@@ -1695,15 +1605,13 @@
             }
         }
     AVEN_C_LEX_STATE_PPD_CHAR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\\': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_CHAR_ESC;
             }
             case '\'': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_BODY;
             }
             case 0:
@@ -1712,12 +1620,11 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_CHAR;
             }
         }
     AVEN_C_LEX_STATE_PPD_CHAR_ESC:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case 'a':
             case 'b':
             case 'f':
@@ -1730,7 +1637,6 @@
             case '\"':
             case '\'': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_CHAR;
             }
             default: {
@@ -1738,15 +1644,13 @@
             }
         }
     AVEN_C_LEX_STATE_PPD_BODY_FSLASH:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\\': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_PPD_BODY_ESC;
             }
             case '/': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .index = ctx->token_start,
                     .end = ctx->index,
@@ -1757,7 +1661,6 @@
             }
             case '*': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .index = ctx->token_start,
                     .end = ctx->index,
@@ -1782,20 +1685,17 @@
         if (!ctx->ppd) {
             goto AVEN_C_LEX_STATE_INV;
         }
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\\': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_BSLASH;
             }
             case '\r': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_BSLASH_CR;
             }
             case '\n': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_back(ctx->tokens).trailing_lines += 1;
                 goto AVEN_C_LEX_STATE_NONE;
             }
@@ -1804,10 +1704,9 @@
             }
         }
     AVEN_C_LEX_STATE_BSLASH_CR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\n': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_back(ctx->tokens).trailing_lines += 1;
                 goto AVEN_C_LEX_STATE_NONE;
             }
@@ -1822,15 +1721,13 @@
             }
         }
     AVEN_C_LEX_STATE_INCLUDE:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '/': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_INCLUDE_FSLASH;
             }
             case '\r': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_INCLUDE_CR;
             }
             case 0: {
@@ -1843,7 +1740,6 @@
             }
             case '\n': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .index = ctx->token_start,
                     .end = ctx->index,
@@ -1854,15 +1750,13 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_INCLUDE;
             }
         }
     AVEN_C_LEX_STATE_INCLUDE_FSLASH:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '/': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .index = ctx->token_start,
                     .end = ctx->index,
@@ -1873,7 +1767,6 @@
             }
             case '*': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .index = ctx->token_start,
                     .end = ctx->index,
@@ -1895,10 +1788,9 @@
             }
         }
     AVEN_C_LEX_STATE_INCLUDE_CR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\n': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .index = ctx->token_start,
                     .end = ctx->index,
@@ -1912,15 +1804,13 @@
             }
         }
     AVEN_C_LEX_STATE_COMMENT:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\\': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_COMMENT_ESC;
             }
             case '\r': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_COMMENT_CR;
             }
             case 0:
@@ -1934,12 +1824,11 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_COMMENT;
             }
         }
     AVEN_C_LEX_STATE_COMMENT_CR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\n': {
                 list_push(ctx->tokens) = (AvenCToken){
                     .index = ctx->token_start,
@@ -1959,10 +1848,9 @@
             }
         }
     AVEN_C_LEX_STATE_COMMENT_ESC:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\\': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_COMMENT_ESC;
             }
             case 0:
@@ -1972,20 +1860,17 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_COMMENT;
             }
         }
     AVEN_C_LEX_STATE_MLCOMMENT:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '*': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_MLCOMMENT_STAR;
             }
             case '\r': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_MLCOMMENT_CR;
             }
             case '\n': {
@@ -2001,12 +1886,11 @@
             }
             default: {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_MLCOMMENT;
             }
         }
     AVEN_C_LEX_STATE_MLCOMMENT_CR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\n': {
                 list_push(ctx->tokens) = (AvenCToken){
                     .index = ctx->token_start,
@@ -2027,11 +1911,10 @@
         }
     AVEN_C_LEX_STATE_MLCOMMENT_SKIP:
         ctx->token_start = ctx->index;
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '\n': {
                 list_back(ctx->tokens).trailing_lines += 1;
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 ctx->token_start = ctx->index;
                 goto AVEN_C_LEX_STATE_MLCOMMENT_SKIP;
             }
@@ -2039,7 +1922,6 @@
             case '\t':
             case '\r': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 ctx->token_start = ctx->index;
                 goto AVEN_C_LEX_STATE_MLCOMMENT_SKIP;
             }
@@ -2051,10 +1933,9 @@
             }
         }
     AVEN_C_LEX_STATE_MLCOMMENT_STAR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '/': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .index = ctx->token_start,
                     .end = ctx->index,
@@ -2064,7 +1945,6 @@
             }
             case '*': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_MLCOMMENT_STAR;
             }
             case 0: {
@@ -2075,7 +1955,7 @@
             }
         }
     AVEN_C_LEX_STATE_STR_ESC:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case 'a':
             case 'b':
             case 'f':
@@ -2088,7 +1968,6 @@
             case '\"':
             case '\'': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_STR;
             }
             default: {
@@ -2096,7 +1975,7 @@
             }
         }
     AVEN_C_LEX_STATE_CHAR_ESC:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case 'a':
             case 'b':
             case 'f':
@@ -2109,7 +1988,6 @@
             case '\"':
             case '\'': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_CHAR;
             }
             default: {
@@ -2117,7 +1995,7 @@
             }
         }
     AVEN_C_LEX_STATE_DOT:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '0':
             case '1':
             case '2':
@@ -2129,12 +2007,10 @@
             case '8':
             case '9': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_NUM;
             }
             case '.': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_DOT_DOT;
             }
             default: {
@@ -2147,7 +2023,7 @@
             }
         }
     AVEN_C_LEX_STATE_DOT_DOT:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '0':
             case '1':
             case '2':
@@ -2165,12 +2041,10 @@
                 };
                 ctx->token_start = ctx->index - 1;
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_NUM;
             }
             case '.': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2194,10 +2068,9 @@
             }
         }
     AVEN_C_LEX_STATE_HASH:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '#': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2218,10 +2091,9 @@
             }
         }
     AVEN_C_LEX_STATE_MINUS:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2231,7 +2103,6 @@
             }
             case '>': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2241,7 +2112,6 @@
             }
             case '-': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2259,10 +2129,9 @@
             }
         }
     AVEN_C_LEX_STATE_PLUS:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2272,7 +2141,6 @@
             }
             case '+': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2290,10 +2158,9 @@
             }
         }
     AVEN_C_LEX_STATE_AMP:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2303,7 +2170,6 @@
             }
             case '&': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2321,10 +2187,9 @@
             }
         }
     AVEN_C_LEX_STATE_STAR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2342,10 +2207,9 @@
             }
         }
     AVEN_C_LEX_STATE_EXCL:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2363,13 +2227,12 @@
             }
         }
     AVEN_C_LEX_STATE_FSLASH:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '/': {
                 if (ctx->ppd) {
                     goto AVEN_C_LEX_STATE_DONE;
                 }
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_COMMENT;
             }
             case '*': {
@@ -2377,12 +2240,10 @@
                     goto AVEN_C_LEX_STATE_DONE;
                 }
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_MLCOMMENT;
             }
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2400,10 +2261,9 @@
             }
         }
     AVEN_C_LEX_STATE_PERCT:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case ':': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2413,7 +2273,6 @@
             }
             case '>': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2423,7 +2282,6 @@
             }
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2441,10 +2299,9 @@
             }
         }
     AVEN_C_LEX_STATE_LT:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '%': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2454,7 +2311,6 @@
             }
             case ':': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2464,7 +2320,6 @@
             }
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2474,7 +2329,6 @@
             }
             case '<': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_LTLT;
             }
             default: {
@@ -2487,10 +2341,9 @@
             }
         }
     AVEN_C_LEX_STATE_LTLT:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2508,10 +2361,9 @@
             }
         }
     AVEN_C_LEX_STATE_GT:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2521,7 +2373,6 @@
             }
             case '>': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 goto AVEN_C_LEX_STATE_GTGT;
             }
             default: {
@@ -2534,10 +2385,9 @@
             }
         }
     AVEN_C_LEX_STATE_GTGT:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2555,10 +2405,9 @@
             }
         }
     AVEN_C_LEX_STATE_EQ:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2576,10 +2425,9 @@
             }
         }
     AVEN_C_LEX_STATE_XOR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2597,10 +2445,9 @@
             }
         }
     AVEN_C_LEX_STATE_OR:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '|': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2610,7 +2457,6 @@
             }
             case '=': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
@@ -2628,10 +2474,9 @@
             }
         }
     AVEN_C_LEX_STATE_COLON:
-        switch (c) {
+        switch (get(ctx->bytes, ctx->index)) {
             case '>': {
                 ctx->index += 1;
-                c = get(ctx->bytes, ctx->index);
                 list_push(ctx->tokens) = (AvenCToken){
                     .type = AVEN_C_TOKEN_TYPE_PNC,
                     .index = ctx->token_start,
