@@ -174,11 +174,11 @@ configure:
         // aven cfmt disable
 options:
     --out "str"           output file (optional)
-    --stdin [false]       read from stdin (default=false)
-    --in-place [false]    format src_file in-place (default=false)
-    --columns N           column width, 0 for no limit (default=80)
-    --indent N            indent width (default=4)
-    --depth N             parse depth, 0 for no limit (default=40)
+    --stdin [false]       read from stdin (default: false)
+    --in-place [false]    format src_file in-place (default: false)
+    --columns N           column width, 0 for no limit (default: 80)
+    --indent N            indent width (default: 4)
+    --depth N             parse tree depth, 0 for no limit (default: 40)
     --help                show this  message
 ```
 
