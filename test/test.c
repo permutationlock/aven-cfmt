@@ -13,8 +13,8 @@
 
 #include <stdlib.h>
 
-#include "test/c.h"
-#include "test/c_files.h"
+#include "c.h"
+#include "c_files.h"
 
 #define ARENA_SIZE (4096 * 20000)
 
