@@ -1396,6 +1396,15 @@
                 },
             },
             {
+                .desc = aven_str("aven_c_ast_render c23 attribute"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("[[noreturn]] void exit(void);\n"),
+                    .expected = aven_str("[[noreturn]] void exit(void);\n"),
+                    .line_len = 36,
+                },
+            },
+            {
                 .desc = aven_str("aven_c_ast_render initializer list w/pointer cast"),
                 .fn = test_aven_c_ast_render,
                 .args = &(TestAvenCAstRenderArgs){

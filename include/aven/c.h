@@ -2623,6 +2623,7 @@
         AVEN_C_AST_NODE_TYPE_ALIGNMENT_SPECIFIER,
         AVEN_C_AST_NODE_TYPE_INIT_DECLARATOR,
         AVEN_C_AST_NODE_TYPE_ATTRIBUTE,
+        AVEN_C_AST_NODE_TYPE_ATTRIBUTE_NEW,
         AVEN_C_AST_NODE_TYPE_DECLARATOR,
         AVEN_C_AST_NODE_TYPE_DIR_DECLARATOR,
         AVEN_C_AST_NODE_TYPE_DIR_DECLARATOR_PARAM_TYPE_LIST,
@@ -3804,11 +3805,96 @@
         return node;
     }
 
+    static uint32_t aven_c_ast_parse_attribute_standard(AvenCAstCtx *ctx) {
+        AvenCToken next = aven_c_ast_next(ctx);
+        uint32_t lhs = 0;
+        uint32_t main_token = ctx->token_index;
+        switch (next.type) {
+            case AVEN_C_TOKEN_TYPE_ID: {
+                aven_c_ast_inc_index(ctx);
+                lhs = aven_c_ast_push_leaf(
+                    ctx,
+                    AVEN_C_AST_NODE_TYPE_IDENTIFIER,
+                    main_token
+                );
+                break;
+            }
+            case AVEN_C_TOKEN_TYPE_KEY: {
+                aven_c_ast_inc_index(ctx);
+                lhs = aven_c_ast_push_leaf(
+                    ctx,
+                    AVEN_C_AST_NODE_TYPE_KEYWORD,
+                    main_token
+                );
+                break;
+            }
+            default:
+                break;
+        }
+        if (lhs == 0) {
+            if (main_token >= ctx->error.token) {
+                ctx->error = (AvenCAstError){
+                    .token = ctx->token_index,
+                    .type = AVEN_C_TOKEN_TYPE_KEY,
+                    .exp = aven_str("[keyword|identifier]"),
+                };
+            }
+            return 0;
+        }
+
+        return lhs;
+    }
+
     static uint32_t aven_c_ast_parse_attribute(AvenCAstCtx *ctx) {
         AvenCAstCtxState state = aven_c_ast_save(ctx);
         uint32_t lhs = aven_c_ast_parse_attribute_specifier(ctx);
         if (lhs == 0) {
-            return 0;
+            uint32_t open_token1 = ctx->token_index;
+            if (!aven_c_ast_match_punctuator(ctx, AVEN_C_PNC_SQBL)) {
+                return 0;
+            }
+            uint32_t open_token2 = ctx->token_index;
+            if (!aven_c_ast_match_punctuator(ctx, AVEN_C_PNC_SQBL)) {
+                aven_c_ast_restore_trap(ctx, state);
+                return 0;
+            }
+            aven_c_ast_descend(ctx);
+            lhs = aven_c_ast_parse_attribute_standard(ctx);
+            if (lhs == 0) {
+                aven_c_ast_error(ctx, state);
+                return 0;
+            }
+            uint32_t close_token1 = ctx->token_index;
+            if (!aven_c_ast_match_punctuator(ctx, AVEN_C_PNC_SQBR)) {
+                aven_c_ast_error(ctx, state);
+                return 0;
+            }
+            uint32_t close_token2 = ctx->token_index;
+            if (!aven_c_ast_match_punctuator(ctx, AVEN_C_PNC_SQBR)) {
+                aven_c_ast_error(ctx, state);
+                return 0;
+            }
+            aven_c_ast_ascend(ctx);
+            uint32_t scratch_top = aven_c_ast_scratch_init(ctx);
+            list_push(ctx->scratch) = open_token2;
+            list_push(ctx->scratch) = close_token1;
+            uint32_t inner_node = aven_c_ast_push(
+                ctx,
+                AVEN_C_AST_NODE_TYPE_ATTRIBUTE_NEW,
+                aven_c_ast_scratch_commit(ctx, scratch_top),
+                lhs,
+                0
+            );
+            scratch_top = aven_c_ast_scratch_init(ctx);
+            list_push(ctx->scratch) = open_token1;
+            list_push(ctx->scratch) = close_token2;
+            return aven_c_ast_push(
+                ctx,
+                AVEN_C_AST_NODE_TYPE_ATTRIBUTE_NEW,
+                aven_c_ast_scratch_commit(ctx, scratch_top),
+                inner_node,
+                0
+            );
         }
         uint32_t open_token = ctx->token_index;
         if (!aven_c_ast_match_punctuator(ctx, AVEN_C_PNC_PARL)) {
@@ -8563,6 +8649,7 @@
                 );
                 break;
             }
+            case AVEN_C_AST_NODE_TYPE_ATTRIBUTE_NEW:
             case AVEN_C_AST_NODE_TYPE_ARRAY_DESIGNATOR: {
                 AvenCAstDataSlice tokens = aven_c_ast_data_get(
                     ctx->ast,
