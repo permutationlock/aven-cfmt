@@ -1405,6 +1405,35 @@
                 },
             },
             {
+                .desc = aven_str("aven_c_ast_render c23 parameterized attribute"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("[[deprecated(\"use newfunc\")]] void my_func(void);\n"),
+                    .expected = aven_str(
+                        "[[deprecated(\"use newfunc\")]] void\n" "    my_func(void);\n"
+                    ),
+                    .line_len = 36,
+                },
+            },
+            {
+                .desc = aven_str("aven_c_ast_render c23 prefixed attribute"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("[[gnu::unused]] void my_func(void);\n"),
+                    .expected = aven_str("[[gnu::unused]] void my_func(void);\n"),
+                    .line_len = 36,
+                },
+            },
+            {
+                .desc = aven_str("aven_c_ast_render c23 prefixed parameterized attribute"),
+                .fn = test_aven_c_ast_render,
+                .args = &(TestAvenCAstRenderArgs){
+                    .src = slice_array("[[gnu::nonnull(1)]] void my_func(void);\n"),
+                    .expected = aven_str("[[gnu::nonnull(1)]] void my_func(\n" "    void\n" ");\n"),
+                    .line_len = 36,
+                },
+            },
+            {
                 .desc = aven_str("aven_c_ast_render initializer list w/pointer cast"),
                 .fn = test_aven_c_ast_render,
                 .args = &(TestAvenCAstRenderArgs){

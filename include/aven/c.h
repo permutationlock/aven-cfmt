@@ -2623,6 +2623,7 @@
         AVEN_C_AST_NODE_TYPE_ALIGNMENT_SPECIFIER,
         AVEN_C_AST_NODE_TYPE_INIT_DECLARATOR,
         AVEN_C_AST_NODE_TYPE_ATTRIBUTE,
+        AVEN_C_AST_NODE_TYPE_ATTRIBUTE_STANDARD,
         AVEN_C_AST_NODE_TYPE_ATTRIBUTE_NEW,
         AVEN_C_AST_NODE_TYPE_DECLARATOR,
         AVEN_C_AST_NODE_TYPE_DIR_DECLARATOR,
@@ -3806,40 +3807,34 @@
     }
 
     static uint32_t aven_c_ast_parse_attribute_standard(AvenCAstCtx *ctx) {
-        AvenCToken next = aven_c_ast_next(ctx);
-        uint32_t lhs = 0;
-        uint32_t main_token = ctx->token_index;
-        switch (next.type) {
-            case AVEN_C_TOKEN_TYPE_ID: {
-                aven_c_ast_inc_index(ctx);
-                lhs = aven_c_ast_push_leaf(
-                    ctx,
-                    AVEN_C_AST_NODE_TYPE_IDENTIFIER,
-                    main_token
-                );
-                break;
-            }
-            case AVEN_C_TOKEN_TYPE_KEY: {
-                aven_c_ast_inc_index(ctx);
-                lhs = aven_c_ast_push_leaf(
-                    ctx,
-                    AVEN_C_AST_NODE_TYPE_KEYWORD,
-                    main_token
-                );
-                break;
-            }
-            default:
-                break;
-        }
+        AvenCAstCtxState state = aven_c_ast_save(ctx);
+        uint32_t lhs = aven_c_ast_parse_macro_invocation(ctx);
         if (lhs == 0) {
-            if (main_token >= ctx->error.token) {
-                ctx->error = (AvenCAstError){
-                    .token = ctx->token_index,
-                    .type = AVEN_C_TOKEN_TYPE_KEY,
-                    .exp = aven_str("[keyword|identifier]"),
-                };
-            }
             return 0;
+        }
+
+        uint32_t colon_token1 = ctx->token_index;
+        if (aven_c_ast_match_punctuator(ctx, AVEN_C_PNC_COL)) {
+            uint32_t colon_token2 = ctx->token_index;
+            if (!aven_c_ast_match_punctuator(ctx, AVEN_C_PNC_COL)) {
+                aven_c_ast_error(ctx, state);
+                return 0;
+            }
+            uint32_t rhs = aven_c_ast_parse_macro_invocation(ctx);
+            if (rhs == 0) {
+                aven_c_ast_error(ctx, state);
+                return 0;
+            }
+            uint32_t scratch_top = aven_c_ast_scratch_init(ctx);
+            list_push(ctx->scratch) = colon_token1;
+            list_push(ctx->scratch) = colon_token2;
+            return aven_c_ast_push(
+                ctx,
+                AVEN_C_AST_NODE_TYPE_ATTRIBUTE_STANDARD,
+                aven_c_ast_scratch_commit(ctx, scratch_top),
+                lhs,
+                rhs
+            );
         }
 
         return lhs;
@@ -8643,6 +8638,41 @@
                     ctx,
                     node.type,
                     node.lhs,
+                    false,
+                    split,
+                    state
+                );
+                break;
+            }
+            case AVEN_C_AST_NODE_TYPE_ATTRIBUTE_STANDARD: {
+                AvenCAstDataSlice tokens = aven_c_ast_data_get(
+                    ctx->ast,
+                    node.token
+                );
+                aven_c_ast_render_node_try(
+                    ctx,
+                    node.type,
+                    node.lhs,
+                    false,
+                    split,
+                    state
+                );
+                aven_c_ast_render_token_force_try(
+                    ctx,
+                    get(tokens, 0),
+                    split,
+                    state
+                );
+                aven_c_ast_render_token_force_try(
+                    ctx,
+                    get(tokens, 1),
+                    split,
+                    state
+                );
+                aven_c_ast_render_node_try(
+                    ctx,
+                    node.type,
+                    node.rhs,
                     false,
                     split,
                     state
